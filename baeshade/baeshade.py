@@ -117,8 +117,22 @@ class Buffer:
     back buffer for drawing
     """
     def __init__(self,w,h):
-        self.width = w
-        self.height = h
+        self._width = w
+        self._height = h
+
+    @property
+    def width(self):
+        return self._width
+    
+    def reset(self,x,y):
+        self._height = y
+        self._width = x
+
+    @property
+    def height(self):
+        return self._height
+    
+
 
 class PixelCell:
     """
@@ -150,14 +164,12 @@ def setBuffer(x,y,bClip = True):
     """
     bh,bw=os.popen('stty size', 'r').read().split()
     if bClip == True:
-        buf.width = max(0,min(x, int(bw)))
-        buf.height = max(0,min(x, int(bh)))
+        buf.reset(max(0,min(x, int(bw))), max(0,min(x, int(bh))))
     else:
-        buf.width = x
-        buf.height = y
+        buf.reset(x,y)
         if x>int(bw) or y>int(bh):
             print('Your termianl size is %d,%d, your input size is %d,%d, content may not display well...' % (bw,bh,x,y))
-    
+    print('set buffer: %d,%d, ternimal size: %s, %s' % (buf.width,buf.height, bw, bh))
 
 def presentation(clearColor, **kwargs):
     """
@@ -171,7 +183,7 @@ def presentation(clearColor, **kwargs):
         lum = clearColor
         for col in range(buf.width):
             if shaderFunc != None:
-                lum = shaderFunc(col,row)
+                lum = shaderFunc(int(col),row, buf)
             else: 
                 for p in event_list:
                     if p.x == col and p.y == row:

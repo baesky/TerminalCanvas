@@ -5,7 +5,7 @@ GRAY = bs.baeColorPallette.getGrayScale
 RGB = bs.baeColorPallette.RGB
 
 # set a buffer
-bs.setBuffer(46, 23)
+bs.setBuffer(42, 14)
 bgcolor = GRAY(3)
 
 def spSdf(x,y,z):
@@ -14,7 +14,7 @@ def spSdf(x,y,z):
 def rayDir(fov, bufx, bufy, tcx, tcy):
     x = tcx - bufx / 2
     y = tcy - bufy / 2
-    z = bufy / math.tan(math.radians(fov)/2) * 1.0
+    z = bufy / math.tan(math.radians(fov)/2)
     l = math.sqrt(x*x+y*y+z*z)
     return x/l, y/l, -z/l
 

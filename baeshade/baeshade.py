@@ -164,12 +164,11 @@ def setBuffer(x,y,bClip = True):
     """
     bh,bw=os.popen('stty size', 'r').read().split()
     if bClip == True:
-        buf.reset(max(0,min(x, int(bw))), max(0,min(x, int(bh))))
+        buf.reset(max(0,min(x, int(bw))), max(0,min(y, int(bh))))
+        if x>int(bw) or y>int(bh):
+            print('Your termianl size is %s,%s, your input size is %d,%d, content may not display well...' % (bw,bh,x,y))
     else:
         buf.reset(x,y)
-        if x>int(bw) or y>int(bh):
-            print('Your termianl size is %d,%d, your input size is %d,%d, content may not display well...' % (bw,bh,x,y))
-    print('set buffer: %d,%d, ternimal size: %s, %s' % (buf.width,buf.height, bw, bh))
 
 def presentation(clearColor, **kwargs):
     """
@@ -183,7 +182,7 @@ def presentation(clearColor, **kwargs):
         lum = clearColor
         for col in range(buf.width):
             if shaderFunc != None:
-                lum = shaderFunc(int(col),row, buf)
+                lum = shaderFunc(col,row, buf)
             else: 
                 for p in event_list:
                     if p.x == col and p.y == row:
@@ -192,7 +191,7 @@ def presentation(clearColor, **kwargs):
                     else:
                         lum = clearColor
             nl = ""
-            if(col > 44):
+            if(col >= buf.width - 1):
                 nl = "\n"
             print('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m', end=nl)
            

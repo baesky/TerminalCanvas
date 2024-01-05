@@ -1,6 +1,6 @@
 from .baeshade import Buffer
 from .baeshade import baeColorPallette
-from .baeshade import draw
+from .baeshade import drawPallette
 from .baeshade import presentation
 from .baeshade import setBuffer
 from .baeshadeutil import BaeVec3d

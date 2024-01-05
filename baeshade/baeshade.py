@@ -2,6 +2,7 @@ import os
 import datetime
 from time import sleep
 from .baeshadeutil import BaeVec2d
+from .baeshadeutil import BaeVec3d
 
 # gray scale level
 GRAYSCALELEN = 23
@@ -41,10 +42,12 @@ class ColorPallette8bit:
     color space is a 6x6x6 cube
     r,g,b: valid value in [0,255]
     """
-    def RGB(self,r,g,b):
-        assert 0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255
-        return 16 + int(r/255 * 6) * 36 + int(g/255 * 6) * 6 + int(b/255 * 6) 
-        
+    @staticmethod
+    def RGB(r,g,b):
+        r = max(0, min(255,r))
+        g = max(0, min(255,g))
+        b = max(0, min(255,b))
+        return 16 + int(r/255 * 5) * 36 + int(g/255 * 5) * 6 + int(b/255 * 5) 
 
     @property
     def Black(self):
@@ -147,11 +150,11 @@ class PixelCell:
         self.color = color
 
 draw_list = []
-def draw(x,y,color):
+def drawPallette(x,y,color):
     """
     set a color on the location you specified
     x,y: where the color will shade on the buffer
-    color: shade param
+    color: color pallette
     """
     draw_list.append(PixelCell(x,y,color))
 
@@ -174,9 +177,10 @@ def setBuffer(x,y,bClip = True):
     else:
         buf.reset(x,y)
 
-def presentation(clearColor, **kwargs):
+def presentation(clearColor = BaeVec3d(0,0,0), **kwargs):
     """
     call this to draw a frame
+    clearColor: [r,g,b]
     shader: [optional] , if provided, will use shader routine instead of draw(), shader function must return a RGB()
     """
 
@@ -188,7 +192,7 @@ def presentation(clearColor, **kwargs):
             if shaderFunc != None:
                 lum = shaderFunc(col,row, buf)
             else: 
-                for p in event_list:
+                for p in draw_list:
                     if p.x == col and p.y == row:
                         lum = p.color
                         break
@@ -197,6 +201,7 @@ def presentation(clearColor, **kwargs):
             nl = ""
             if col >= (buf.width - 1):
                 nl = "\n"
+            lum = ColorPallette8bit.RGB(lum.X,lum.Y,lum.Z)
             print('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m', end=nl)
            
 

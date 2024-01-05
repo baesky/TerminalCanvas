@@ -71,7 +71,10 @@ class BaeVec3d(BaeVec2d):
         return BaeVec3d(self.X - o.X, self.Y - o.Y, self.Z - o.Z)
     
     def __mul__(self, f):
-        return BaeVec3d(self.X * f, self.Y * f, self.Z * f )
+        if isinstance(f, float):
+            return BaeVec3d(self.X * f, self.Y * f, self.Z * f )
+        else:
+            return BaeVec3d(self.X * f.X, self.Y * f.Y, self.Z * f.Z )
     
     def __truediv__(self, f):
         return BaeVec3d(self.X / f, self.Y /f, self.Z / f)

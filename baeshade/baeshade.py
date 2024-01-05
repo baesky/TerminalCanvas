@@ -1,6 +1,7 @@
 import os
 import datetime
 from time import sleep
+from .baeshadeutil import BaeVec2d
 
 # gray scale level
 GRAYSCALELEN = 23
@@ -117,21 +118,23 @@ class Buffer:
     back buffer for drawing
     """
     def __init__(self,w,h):
-        self._width = w
-        self._height = h
+        self._size = BaeVec2d(w,h)
+
 
     @property
     def width(self):
-        return self._width
+        return self._size.X
     
     def reset(self,x,y):
-        self._height = y
-        self._width = x
+        self._size = BaeVec2d(x,y)
 
     @property
     def height(self):
-        return self._height
+        return self._size.Y
     
+    @property
+    def Size(self):
+        return self._size
 
 
 class PixelCell:
@@ -191,7 +194,7 @@ def presentation(clearColor, **kwargs):
                     else:
                         lum = clearColor
             nl = ""
-            if(col >= buf.width - 1):
+            if col >= (buf.width - 1):
                 nl = "\n"
             print('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m', end=nl)
            

@@ -1,7 +1,7 @@
 import math
         
 class BaeVec2d:
-    def __init__(self, x=0,y=0):
+    def __init__(self, x=0.0,y=0.0):
         self._x = x
         self._y = y
 
@@ -46,7 +46,7 @@ class BaeVec2d:
 
 class BaeVec3d(BaeVec2d):
     def __init__(self, x=0,y=0,z=0):
-        super().__init__(self, x,y)
+        super().__init__(x,y)
         self._z = z
 
     @property
@@ -57,12 +57,12 @@ class BaeVec3d(BaeVec2d):
     def Length(self):
         return math.sqrt(self.X*self.X+self.Y*self.Y+self.Z*self.Z)
     
-    @property
     def Normalize(self):
-        len = self.Length()
+        len = self.Length
         self._x = self._x / len
         self._y = self._y / len
         self._z = self._z / len
+        return self
 
     def __add__(self,o):
         return BaeVec3d(self.X + o.X, self.Y + o.Y, self.Z + o.Z)
@@ -82,7 +82,7 @@ class BaeVec3d(BaeVec2d):
 
     @property
     def IsNearZero(self):
-        return self.Length() < 0.000001    
+        return self.Length < 0.000001    
 
 class BaeRay:
     def __init__(self, v, d):
@@ -90,4 +90,5 @@ class BaeRay:
         self._dir = d
 
     def Step(self,t):
-        return BaeVec3d(self.o + self.d * t)
+        p = self._o + self._dir * t
+        return BaeVec3d(p.X,p.Y,p.Z)

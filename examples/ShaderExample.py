@@ -13,8 +13,9 @@ bgcolor = GRAY(0) #GRAY(3)
 
 def spSdf(v):
     # define a sphere in 3d location, z-front
-    s = vec3(0,1,6)
-    dist = (v - s).Length - 1.0
+    s = vec3(0,1,4)
+    d = v - s
+    dist = d.Length - 1.0
     return dist
 
 def sdfScene(ray,start,end,steps=100):
@@ -23,7 +24,7 @@ def sdfScene(ray,start,end,steps=100):
 
         p = ray.Step(depth)
 
-        dist = spSdf(p.X, p.Y, p.Z)
+        dist = spSdf(p)
         if dist < 0.0001:
             dx = spSdf(vec3(p.X + 0.0001,p.Y,p.Z)) - spSdf( vec3(p.X - 0.0001,p.Y,p.Z))
             dy = spSdf(vec3(p.X,p.Y+0.0001,p.Z)) - spSdf(vec3(p.X,p.Y-0.0001,p.Z))
@@ -36,40 +37,30 @@ def sdfScene(ray,start,end,steps=100):
 
     return end, vec3(), vec3()
 
-# per pixel
-def ps(x,y, b):
-
+def ps(x,y,b):
     uv = (vec2(x,y) / (b.Size))
     uv -= 0.5
-    #AR = b.width / b.height
-    #uv.SetX(uv.X * AR )
-
-    d = vec2.Dot(uv,uv)
-
-    if d < 0.25:
-        d = 1.0
-    else:
-        d = 0.0
-   
-    output = RGB(52 * d,0,0)
-
-    return output
-
-def ps2(x,y,b):
-    uv = (vec2(x,y) / (b.Size))
-    uv -= 0.5
+    uv.SetY(uv.Y * -1.0)
 
     eye = vec3(0,1,0)
-    dir = vec3(uv.x,uv.y,1)
-    dir.Normalize()
+    dir = vec3(uv.X,uv.Y,1).Normalize()
 
     d,n,p = sdfScene(ray(eye,dir), 0.1, 100)
 
     if n.IsNearZero == True:
         return bgcolor
     
+    ltPos = vec3(-2,3,0)
 
-    return RGB(52 )
+    L = (ltPos - p).Normalize()
+
+    NDL = max(0, min(1,vec3.Dot(n,L)))
+
+    output = RGB(52,0,0)
+    if NDL > 0 :
+        output = RGB(52 + int(200*NDL),0,0)
+
+    return output
 
 
 # run one frame

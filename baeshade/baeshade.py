@@ -146,15 +146,16 @@ class PixelCell:
         self.y = y
         self.color = color
 
-event_list = []
+draw_list = []
 def draw(x,y,color):
     """
     set a color on the location you specified
     x,y: where the color will shade on the buffer
     color: shade param
     """
-    event_list.append(PixelCell(x,y,color))
+    draw_list.append(PixelCell(x,y,color))
 
+# default buf
 buf = Buffer(32,32)
 
 def setBuffer(x,y,bClip = True):

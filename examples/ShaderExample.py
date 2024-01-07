@@ -4,11 +4,9 @@ import math
 ray = bs.BaeRay
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
-GRAY = bs.baeColorPallette.getGrayScale
-RGB = bs.baeColorPallette.RGB
 
 # set a buffer
-bs.setBuffer(42, 14)
+bs.setBuffer(42, 14, mode='24-bit')
 bgcolor = vec3(0,0,0)
 
 def spSdf(v):
@@ -80,11 +78,9 @@ def ps(x,y,b):
 
     L = (ltPos - p).Normalize()
 
-    NDL = max(0, min(1,vec3.Dot(n,L)))
+    NDL = max(0.0, min(1.0,vec3.Dot(n,L)))
 
-    output = c
-    if NDL > 0 :
-        output = c * (ltCol *  NDL) + c
+    output = c * (ltCol *  NDL)
 
     return output
 

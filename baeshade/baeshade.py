@@ -43,11 +43,8 @@ class ColorPallette8bit:
     r,g,b: valid value in [0,255]
     """
     @staticmethod
-    def RGB(r,g,b):
-        r = max(0, min(255,r))
-        g = max(0, min(255,g))
-        b = max(0, min(255,b))
-        return 16 + int(r/255 * 5) * 36 + int(g/255 * 5) * 6 + int(b/255 * 5) 
+    def RGBIndex(r,g,b):
+        return 16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5) 
 
     @property
     def Black(self):
@@ -120,16 +117,33 @@ class Buffer:
     """
     back buffer for drawing
     """
-    def __init__(self,w,h):
+    def __init__(self,w,h,mode='8-bit'):
         self._size = BaeVec2d(w,h)
+        self._mode = mode
+    
+    @staticmethod
+    def Color8Bits():
+        return '8-bit'
+    
+    @staticmethod
+    def Color24Bits():
+        return '24-bit'
 
+    @property
+    def ColorMode(self):
+        """
+        8-bit: 256 colors
+        24-bit: true-colors
+        """
+        return self._mode
 
     @property
     def width(self):
         return self._size.X
     
-    def reset(self,x,y):
+    def reset(self,x,y,mode):
         self._size = BaeVec2d(x,y)
+        self._mode = mode
 
     @property
     def height(self):
@@ -161,7 +175,22 @@ def drawPallette(x,y,color):
 # default buf
 buf = Buffer(32,32)
 
-def setBuffer(x,y,bClip = True):
+def quantify(rgb):
+    r = max(0, min(255,rgb.X))
+    g = max(0, min(255,rgb.Y))
+    b = max(0, min(255,rgb.Z))
+    return BaeVec3d(round(r),round(g),round(b))
+
+def convertColor(rgb, mode):
+    qc = quantify(rgb)
+    match mode:
+        case "8-bit":
+            colorIdx = ColorPallette8bit.RGBIndex(qc.X,qc.Y,qc.Z)
+            return '\x1b[48;5;%dm' % (colorIdx) + " " + '\x1b[0m'
+        case "24-bit":
+            return '\x1b[48;2;%d;%d;%dm' % (qc.X,qc.Y,qc.Z) + " " + '\x1b[0m'
+
+def setBuffer(x,y, mode = '8-bit',bClip = True):
     """
     set the buffer size you want to display in terminal, if not set, default value will be used.
 
@@ -171,11 +200,13 @@ def setBuffer(x,y,bClip = True):
     """
     bh,bw=os.popen('stty size', 'r').read().split()
     if bClip == True:
-        buf.reset(max(0,min(x, int(bw))), max(0,min(y, int(bh))))
+        buf.reset(max(0,min(x, int(bw))), max(0,min(y, int(bh))),mode)
         if x>int(bw) or y>int(bh):
             print('Your termianl size is %s,%s, your input size is %d,%d, content may not display well...' % (bw,bh,x,y))
     else:
-        buf.reset(x,y)
+        buf.reset(x,y,mode)
+
+bDebugDraw = True
 
 def presentation(clearColor = BaeVec3d(0,0,0), **kwargs):
     """
@@ -203,9 +234,13 @@ def presentation(clearColor = BaeVec3d(0,0,0), **kwargs):
             nl = ""
             if col >= (buf.width - 1):
                 nl = "\n"
-            lum = ColorPallette8bit.RGB(lum.X,lum.Y,lum.Z)
-            #print('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m', end=nl)
-            outColor.append('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m' + nl)
+            
+            # draw per line so we can get debug with visualize
+            if bDebugDraw == True:
+                print(convertColor(lum, buf.ColorMode), end=nl)
+            else:
+                outColor.append(convertColor(lum, buf.ColorMode) + nl)
 
-    print(''.join(outColor))
+    if bDebugDraw == False:
+        print(''.join(outColor))
 

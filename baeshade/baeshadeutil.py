@@ -95,3 +95,12 @@ class BaeRay:
     def Step(self,t):
         p = self._o + self._dir * t
         return BaeVec3d(p.X,p.Y,p.Z)
+    
+class BaeMathUtil:
+
+    @staticmethod
+    def clamp(v,b,t):
+        """
+        clamp value v at: b <= v <= t
+        """
+        return max(b, min(v,t))

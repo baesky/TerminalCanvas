@@ -3,6 +3,7 @@ import datetime
 from time import sleep
 from .baeshadeutil import BaeVec2d
 from .baeshadeutil import BaeVec3d
+from typing import Optional, Callable
 
 # gray scale level
 GRAYSCALELEN = 23
@@ -113,45 +114,162 @@ class ColorPallette8bit:
 
 baeColorPallette = ColorPallette8bit()
 
-class Buffer:
-    """
-    back buffer for drawing
-    """
-    def __init__(self,w,h,mode='8-bit'):
-        self._size = BaeVec2d(w,h)
-        self._mode = mode
-    
+class BaeColorMode:
+
+    @staticmethod
+    def Color4Bits():
+        """
+        basic color for terminal, 8 basic color + 8 bright version
+        not implement yet
+        """
+        return '4-bit'
+
     @staticmethod
     def Color8Bits():
+        """
+        256-color
+        """
         return '8-bit'
     
     @staticmethod
     def Color24Bits():
+        """
+        True-color
+        """
         return '24-bit'
+    
+class BaeBuffer:
+    """
+    back buffer for drawing
+    """
+    def __init__(self,w,h,mode=BaeColorMode.Color8Bits):
+        self._size = BaeVec2d(w,h)
+        self._colormode = mode
 
     @property
-    def ColorMode(self):
-        """
-        8-bit: 256 colors
-        24-bit: true-colors
-        """
-        return self._mode
+    def colorMode(self):
+        return self._colormode
 
     @property
     def width(self):
         return self._size.X
-    
-    def reset(self,x,y,mode):
-        self._size = BaeVec2d(x,y)
-        self._mode = mode
 
     @property
     def height(self):
         return self._size.Y
     
     @property
-    def Size(self):
+    def size(self):
         return self._size
+    
+    def reset(self,x,y,mode=BaeColorMode.Color8Bits):
+        self._size = BaeVec2d(x,y)
+        self._mode = mode
+
+class BaeTermDrawPipeline:
+    def __init__(self, 
+                 buf:BaeBuffer, 
+                 ps: Optional[Callable[[int,int, BaeBuffer],BaeVec3d]],
+                 debug = False):
+        """
+        buf: render target
+        ps: pixel shader
+        """
+        self._buff = buf
+        self._ps = ps
+        self._enableDebug = debug
+
+    def getShader(self):
+        return self._ps
+
+    def getBuffer(self):
+        return self._buff
+
+    @property
+    def getRTHeight(self):
+        return self._buff.height
+    
+    @property
+    def getRTWidth(self):
+        return self._buff.width
+    
+    @property
+    def getColorMode(self):
+        return self._buff.colorMode
+
+    def debugable(self):
+        return self._enableDebug
+
+    def bindRenderTaret(self, buf : BaeBuffer):
+        """
+        bind a RT to draw
+        """
+        self._buff = buf
+
+
+
+class BaeTermDraw:
+
+    @staticmethod
+    def quantify(rgb : BaeVec3d):
+        """
+        make sure value in a safty range which terminal like
+        """
+        r = max(0, min(255,rgb.X))
+        g = max(0, min(255,rgb.Y))
+        b = max(0, min(255,rgb.Z))
+        return BaeVec3d(round(r),round(g),round(b))
+    
+    @staticmethod
+    def encodeColor(rgb, mode):
+        qc = BaeTermDraw.quantify(rgb)
+        match mode:
+            case BaeColorMode.Color8Bits:
+                colorIdx = ColorPallette8bit.RGBIndex(qc.X,qc.Y,qc.Z)
+                return '\x1b[48;5;%dm' % (colorIdx) + " " + '\x1b[0m'
+            case BaeColorMode.Color24Bits:
+                return '\x1b[48;2;%d;%d;%dm' % (qc.X,qc.Y,qc.Z) + " " + '\x1b[0m'
+            case _:
+                assert True, "you should use correct color mode"
+                return '\x1b[31mError Color Mode!\x1b[0m'
+            
+    @staticmethod
+    def present(pipeCfg : BaeTermDrawPipeline, clrCol = BaeVec3d(0,0,0), **kwargs):
+        """
+        call this to draw a frame
+        pipeCfg: a BaeTermDrawPipeline to config how to draw
+        clrCol: a BaeVec3d type
+        """
+
+        shaderFunc = pipeCfg.getShader()
+        rt = pipeCfg.getBuffer()
+        bDebugDraw = pipeCfg.debugable()
+        tempBuffer = []
+
+        for row in range(pipeCfg.getRTHeight):
+            lum = clrCol
+            for col in range(pipeCfg.getRTWidth):
+                if shaderFunc != None:
+                    lum = shaderFunc(col,row, rt)
+                else: 
+                    for p in draw_list:
+                        if p.x == col and p.y == row:
+                            lum = p.color
+                            break
+                        else:
+                            lum = clrCol
+                nl = ""
+                if col >= (rt.width - 1):
+                    nl = "\n"
+                
+                # draw per line so we can get debug with visualize
+                if bDebugDraw == True:
+                    print(BaeTermDraw.encodeColor(lum, pipeCfg.getColorMode), end=nl)
+                else:
+                    tempBuffer.append(BaeTermDraw.encodeColor(lum, pipeCfg.getColorMode) + nl)
+
+        if bDebugDraw == False:
+            print(''.join(tempBuffer))
 
 
 class PixelCell:
@@ -172,32 +290,8 @@ def drawPallette(x,y,color):
     """
     draw_list.append(PixelCell(x,y,color))
 
-# default buf
-buf = Buffer(32,32)
-
-def quantify(rgb):
-    r = max(0, min(255,rgb.X))
-    g = max(0, min(255,rgb.Y))
-    b = max(0, min(255,rgb.Z))
-    return BaeVec3d(round(r),round(g),round(b))
-
-def convertColor(rgb, mode):
-    qc = quantify(rgb)
-    match mode:
-        case "8-bit":
-            colorIdx = ColorPallette8bit.RGBIndex(qc.X,qc.Y,qc.Z)
-            return '\x1b[48;5;%dm' % (colorIdx) + " " + '\x1b[0m'
-        case "24-bit":
-            return '\x1b[48;2;%d;%d;%dm' % (qc.X,qc.Y,qc.Z) + " " + '\x1b[0m'
-
-def setBuffer(x,y, mode = '8-bit',bClip = True):
-    """
-    set the buffer size you want to display in terminal, if not set, default value will be used.
-
-    x: buffer width
-    y: buffer height
-    bClip: wether or not clip the size if value greater than terminal display size
-    """
+"""def setBuffer(x,y, mode = '8-bit',bClip = True):
+    
     bh,bw=os.popen('stty size', 'r').read().split()
     if bClip == True:
         buf.reset(max(0,min(x, int(bw))), max(0,min(y, int(bh))),mode)
@@ -205,42 +299,4 @@ def setBuffer(x,y, mode = '8-bit',bClip = True):
             print('Your termianl size is %s,%s, your input size is %d,%d, content may not display well...' % (bw,bh,x,y))
     else:
         buf.reset(x,y,mode)
-
-bDebugDraw = True
-
-def presentation(clearColor = BaeVec3d(0,0,0), **kwargs):
-    """
-    call this to draw a frame
-    clearColor: [r,g,b]
-    shader: [optional] , if provided, will use shader routine instead of draw(), shader function must return a RGB()
-    """
-
-    shaderFunc = kwargs.get("shader", None)
-
-    outColor = []
-
-    for row in range(buf.height):
-        lum = clearColor
-        for col in range(buf.width):
-            if shaderFunc != None:
-                lum = shaderFunc(col,row, buf)
-            else: 
-                for p in draw_list:
-                    if p.x == col and p.y == row:
-                        lum = p.color
-                        break
-                    else:
-                        lum = clearColor
-            nl = ""
-            if col >= (buf.width - 1):
-                nl = "\n"
-            
-            # draw per line so we can get debug with visualize
-            if bDebugDraw == True:
-                print(convertColor(lum, buf.ColorMode), end=nl)
-            else:
-                outColor.append(convertColor(lum, buf.ColorMode) + nl)
-
-    if bDebugDraw == False:
-        print(''.join(outColor))
-
+"""

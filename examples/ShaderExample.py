@@ -5,8 +5,7 @@ ray = bs.BaeRay
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 
-# set a buffer
-bs.setBuffer(42, 14, mode='24-bit')
+
 bgcolor = vec3(0,0,0)
 
 def spSdf(v):
@@ -61,7 +60,7 @@ def sdfScene(ray,start,end,steps=100):
 
 def ps(x,y,b):
 
-    uv = (vec2(x,y) / (b.Size))
+    uv = (vec2(x,y) / (b.size))
     uv -= 0.5
     uv.SetY(uv.Y * -1.0)
 
@@ -84,6 +83,9 @@ def ps(x,y,b):
 
     return output
 
+# set a buffer
+buf = bs.BaeBuffer(42,14)
+drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps)
 
 # run one frame
-bs.presentation(bgcolor, shader=ps)
+bs.BaeTermDraw.present(drawPipe, clrCol=bgcolor)

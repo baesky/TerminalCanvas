@@ -12,8 +12,10 @@ delta = 0
 idx = 0
 #print('\x1b[=18H]')
 
-for i in range(256):
-    print('\x1b[48;2;%d;%d;%dm' % (i,i,i) + " " * int(width) + '\x1b[0m',)
+#for i in range(256):+ "▀" * int(width)
+ #   print('\x1b[48;2;%d;%d;%dm' % (i,i,i) + " " * int(width) + '\x1b[0m',)
+print('\x1b[38;2;%d;%d;%dm' % (128,0,0) + '\x1b[48;2;%d;%d;%dm' % (0,128,0) 
+      + '▀' + '\x1b[0m',end="")
 
 while False:
     first_time = dt.datetime.now()

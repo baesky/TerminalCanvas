@@ -232,7 +232,20 @@ class BaeTermDraw:
             case _:
                 assert True, "you should use correct color mode"
                 return '\x1b[31mError Color Mode!\x1b[0m'
-            
+    
+    @staticmethod
+    def encode(str, rgb, mode, fg=False):
+        qc = BaeTermDraw.quantify(rgb)
+        match mode:
+            case BaeColorMode.Color8Bits:
+                colorIdx = ColorPallette8bit.RGBIndex(qc.X,qc.Y,qc.Z)
+                return '\x1b[48;5;%dm' % (colorIdx) + str + '\x1b[0m'
+            case BaeColorMode.Color24Bits:
+                return '\x1b[48;2;%d;%d;%dm' % (qc.X,qc.Y,qc.Z) + str + '\x1b[0m'
+            case _:
+                assert True, "you should use correct color mode"
+                return '\x1b[31mError Color Mode!\x1b[0m'
+
     @staticmethod
     def present(pipeCfg : BaeTermDrawPipeline, clrCol = BaeVec3d(0,0,0), **kwargs):
         """
@@ -264,9 +277,9 @@ class BaeTermDraw:
                 
                 # draw per line so we can get debug with visualize
                 if bDebugDraw == True:
-                    print(BaeTermDraw.encodeColor(lum, pipeCfg.getColorMode), end=nl)
+                    print(BaeTermDraw.encode(" ",lum,pipeCfg.getColorMode), end=nl)
                 else:
-                    tempBuffer.append(BaeTermDraw.encodeColor(lum, pipeCfg.getColorMode) + nl)
+                    tempBuffer.append(BaeTermDraw.encode(" ",lum, pipeCfg.getColorMode) + nl)
 
         if bDebugDraw == False:
             print(''.join(tempBuffer))
@@ -290,13 +303,3 @@ def drawPallette(x,y,color):
     """
     draw_list.append(PixelCell(x,y,color))
 
-"""def setBuffer(x,y, mode = '8-bit',bClip = True):
-    
-    bh,bw=os.popen('stty size', 'r').read().split()
-    if bClip == True:
-        buf.reset(max(0,min(x, int(bw))), max(0,min(y, int(bh))),mode)
-        if x>int(bw) or y>int(bh):
-            print('Your termianl size is %s,%s, your input size is %d,%d, content may not display well...' % (bw,bh,x,y))
-    else:
-        buf.reset(x,y,mode)
-"""

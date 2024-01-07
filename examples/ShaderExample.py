@@ -4,9 +4,8 @@ import math
 ray = bs.BaeRay
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
-
-
 bgcolor = vec3(0,0,0)
+baedraw = bs.BaeTermDraw
 
 def spSdf(v):
     # define a sphere in 3d location, z-front
@@ -84,8 +83,8 @@ def ps(x,y,b):
     return output
 
 # set a buffer
-buf = bs.BaeBuffer(42,14)
+buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
 drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps)
 
 # run one frame
-bs.BaeTermDraw.present(drawPipe, clrCol=bgcolor)
+baedraw.present(drawPipe, clrCol=bgcolor)

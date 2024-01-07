@@ -186,6 +186,8 @@ def presentation(clearColor = BaeVec3d(0,0,0), **kwargs):
 
     shaderFunc = kwargs.get("shader", None)
 
+    outColor = []
+
     for row in range(buf.height):
         lum = clearColor
         for col in range(buf.width):
@@ -202,6 +204,8 @@ def presentation(clearColor = BaeVec3d(0,0,0), **kwargs):
             if col >= (buf.width - 1):
                 nl = "\n"
             lum = ColorPallette8bit.RGB(lum.X,lum.Y,lum.Z)
-            print('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m', end=nl)
-           
+            #print('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m', end=nl)
+            outColor.append('\x1b[48;5;%dm' % (lum) + " " + '\x1b[0m' + nl)
+
+    print(''.join(outColor))
 

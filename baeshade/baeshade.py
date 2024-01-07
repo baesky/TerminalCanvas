@@ -140,11 +140,27 @@ class BaeColorMode:
     
 class BaeBuffer:
     """
-    back buffer for drawing
+    virtual buffer for drawing
     """
+    
     def __init__(self,w,h,mode=BaeColorMode.Color8Bits):
-        self._size = BaeVec2d(w,h)
+        """
+        w:terminal canvas width
+        h:terminal canvas height
+        """
+        # row and colume in terminal
+        self._termSize = BaeVec2d(w,h)
+        # virtual buffer size
+        self._vSize = BaeVec2d(w,h * 2)
         self._colormode = mode
+        self._virtualBuffer = [ [0 for x in range(w)] for y in range(h*2)]
+
+    def getVirtualBuffer(self):
+        return self._virtualBuffer
+    
+    @property
+    def virtualBuffer(self):
+        return self._virtualBuffer
 
     @property
     def colorMode(self):
@@ -159,12 +175,13 @@ class BaeBuffer:
         return self._size.Y
     
     @property
-    def size(self):
-        return self._size
+    def virtualSize(self):
+        return self._vSize
     
-    def reset(self,x,y,mode=BaeColorMode.Color8Bits):
-        self._size = BaeVec2d(x,y)
-        self._mode = mode
+    @property
+    def canvasSize(self):
+        return self._termSize
+
 
 class BaeTermDrawPipeline:
     def __init__(self, 
@@ -179,10 +196,12 @@ class BaeTermDrawPipeline:
         self._ps = ps
         self._enableDebug = debug
 
-    def getShader(self):
+    @property
+    def pixelShader(self):
         return self._ps
 
-    def getBuffer(self):
+    @property
+    def backbuffer(self):
         return self._buff
 
     @property
@@ -205,6 +224,45 @@ class BaeTermDrawPipeline:
         bind a RT to draw
         """
         self._buff = buf
+
+    def __draw(self):
+        bw = self.backbuffer.virtualSize.X
+        bh = self.backbuffer.virtualSize.Y
+        vBuf = self.backbuffer.getVirtualBuffer()
+        for row in range(bh):
+            for col in range(bw):
+                if self.pixelShader != None:
+                    vBuf[col][row] = self.pixelShader(col,row, self.backbuffer)
+                else:
+                    for p in draw_list:
+                        pass
+
+
+    def present(self, clrCol : BaeVec3d):
+
+        self.__draw()
+
+        bufferWidth = self.backbuffer.virtualSize.X
+        bufferHeight = self.backbuffer.virtualSize.Y
+
+        tempBuffer=[]
+
+        for row in range(bufferHeight):
+            for col in range(bufferWidth):
+                
+                #nl = ""
+                #if col >= (bufferWidth - 1):
+                #    nl = "\n"
+                nl = "\n" if col >= (bufferWidth - 1) else ""
+                lum = self.backbuffer.virtualBuffer[col][row]
+                # draw per line so we can get debug with visualize
+                if self.debugable == True:
+                    print(BaeTermDraw.encode(" ",self.getColorMode), end=nl)
+                else:
+                    tempBuffer.append(BaeTermDraw.encode(" ",lum, self.getColorMode) + nl)
+
+        if self.debugable == False:
+            print(''.join(tempBuffer))
 
 
 

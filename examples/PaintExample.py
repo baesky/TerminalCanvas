@@ -14,7 +14,9 @@ idx = 0
 
 #for i in range(256):+ "▀" * int(width)
  #   print('\x1b[48;2;%d;%d;%dm' % (i,i,i) + " " * int(width) + '\x1b[0m',)
-print('\x1b[38;2;%d;%d;%dm' % (128,0,0) + '\x1b[48;2;%d;%d;%dm' % (0,128,0) 
+print('\x1b[48;2;%d;%d;%dm' % (128,0,0) + '\x1b[38;2;%d;%d;%dm' % (0,128,0) 
+      + '▀' + '\x1b[0m',end="")
+print('\x1b[38;5;%dm' % (128) + '\x1b[48;5;%dm' % (64) 
       + '▀' + '\x1b[0m',end="")
 
 while False:

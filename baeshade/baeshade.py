@@ -246,6 +246,31 @@ class BaeTermDraw:
                 assert True, "you should use correct color mode"
                 return '\x1b[31mError Color Mode!\x1b[0m'
 
+
+
+    @staticmethod
+    def encodePixel(topColr,botColr,mode):
+        """
+        one time encoding 2 virtual pixel
+        """
+        tc = BaeTermDraw.quantify(topColr)
+        bc = BaeTermDraw.quantify(botColr)
+
+        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b) + '\x1b[0m'
+        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) + '\x1b[0m'
+        encode24bit = lambda t, b : '\x1b[48;2;%dm' % (b) + '\x1b[38;2;%dm▀' % (t) + '\x1b[0m'
+
+        match mode:
+            case BaeColorMode.Color4Bits:
+                return encode4bit(tc,bc)
+            case BaeColorMode.Color8Bits:
+                return encode8bit(tc,bc)
+            case BaeColorMode.Color24Bits:
+                return encode24bit(tc,bc)
+            case _:
+                assert True, "Not supported Color mode"
+                return ''
+
     @staticmethod
     def present(pipeCfg : BaeTermDrawPipeline, clrCol = BaeVec3d(0,0,0), **kwargs):
         """

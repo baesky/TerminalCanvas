@@ -59,7 +59,7 @@ def sdfScene(ray,start,end,steps=100):
 
 def ps(x,y,b):
 
-    uv = (vec2(x,y) / (b.virtualSize))
+    uv = vec2(x,y) / b
     uv -= 0.5
     uv.SetY(uv.Y * -1.0)
 
@@ -84,7 +84,7 @@ def ps(x,y,b):
 
 # set a buffer
 buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
-drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps,debug=True)
+drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps,debug=False)
 
 # run one frame
 drawPipe.present(bgcolor)

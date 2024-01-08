@@ -3,6 +3,7 @@ import datetime
 from time import sleep
 from .baeshadeutil import BaeVec2d
 from .baeshadeutil import BaeVec3d
+from .baeshadeutil import BaeMathUtil
 from typing import Optional, Callable
 from enum import Enum
 
@@ -12,7 +13,84 @@ GRAYSCALELEN = 23
 # gray scale index
 GRAYSCALESTART = 232
 
+# ref to https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+
 class ColorPallette4bit(Enum):
+
+    black = 30
+    red = 31
+    green = 32
+    yellow = 33
+    blue = 34
+    magenta = 35
+    cyan = 36
+    white = 37
+
+    black_bg = black + 10
+    red_bg = red + 10
+    green_bg = green + 10
+    yellow_bg = yellow + 10
+    blue_bg = blue + 10
+    magenta_bg = magenta + 10
+    cyan_bg = cyan + 10
+    white_bg = white + 10
+
+    black_bright = 90
+    red_bright = 91
+    green_bright = 92
+    yellow_bright = 93
+    blue_bright = 94
+    magenta_bright = 95
+    cyan_bright = 96
+    white_bright = 97
+
+    black_bg_bright = 100
+    red_bg_bright = 101
+    green_bg_bright = 102
+    yellow_bg_bright = 103
+    blue_bg_bright = 104
+    magenta_bg_bright = 105
+    cyan_bg_bright = 106
+    white_bg_bright = 107
+
+    @staticmethod
+    def encodeColor(r,g,b):
+        cr = BaeMathUtil.clamp(r,0,1)
+        cg = BaeMathUtil.clamp(g,0,1)
+        cb = BaeMathUtil.clamp(b,0,1)
+        
+        cbit = cr << 2 | cg <<1 | cb
+
+        match cbit:
+            case 7:
+                return ColorPallette4bit.white
+            case 6:
+                return ColorPallette4bit.yellow
+            case 5:
+                return ColorPallette4bit.magenta
+            case 4:
+                return ColorPallette4bit.red
+            case 3:
+                return ColorPallette4bit.cyan
+            case 2:
+                return ColorPallette4bit.green
+            case 1:
+                return ColorPallette4bit.blue
+            case _:
+                return ColorPallette4bit.black
+
+
+
+    @staticmethod
+    def grayscale(s):
+        """
+        s : 0-1 level gray scale, other values will be clamped
+        """
+        grayLv = BaeMathUtil.clamp(s,0,1)
+        return ColorPallette4bit.black if grayLv == 0 else ColorPallette4bit.white
+
+
+class ColorPallette8bit(Enum):
 
     black = 0
     red = 1
@@ -23,106 +101,48 @@ class ColorPallette4bit(Enum):
     cyan = 6
     white = 7
 
-    @staticmethod
-    def encodeColor(r,g,b):
-        return 31#16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5)
-
-class ColorPallette8bit:
-    
-    
-    """
-    ref to https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-
-    """
-    def __init__(self):
-        self._grayScale = []
-        for i in range(GRAYSCALELEN):
-            self._grayScale.append(GRAYSCALESTART+i)
-
-    def getGrayScale(self,lum):
-        """
-        get gray scale color
-        lum: the scale valid range [0,23], which mean from black to white
-        """
-        assert 0 <= lum <= 23
-        return self._grayScale[lum]
-
-
-    """
-    color space is a 6x6x6 cube
-    r,g,b: valid value in [0,255]
-    """
-    @staticmethod
-    def RGBIndex(r,g,b):
-        return 16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5) 
+    black_bright = black + 8
+    red_bright = red + 8
+    green_bright = green + 8
+    yellow_bright = yellow + 8
+    blue_bright = blue + 8
+    magenta_bright = magenta + 8
+    cyan_bright = cyan + 8
+    white_bright = white + 8
 
     @staticmethod
     def encodeColor(r,g,b):
         return 16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5)
+    
+    @staticmethod
+    def grayscale(s):
+        """
+        s : 0-23 level gray scale, other values will be clamped
+        """
+        grayLv = BaeMathUtil.clamp(s,0,23)
+        return 232 + grayLv
 
-    @property
-    def Black(self):
-        return self._black
+class ColorPallette24bit(Enum):
+    black = BaeVec3d(0,0,0)
+    red = BaeVec3d(255,0,0)
+    green = BaeVec3d(0,255,0)
+    blue = BaeVec3d(0,0,255)
+    yellow = BaeVec3d(255,255,0)
+    magenta = BaeVec3d(255,0,255)
+    cyan = BaeVec3d(0,255,255)
+    white = BaeVec3d(255,255,255)
     
-    @property
-    def BrightBlack(self):
-        return self._black + 8
+    @staticmethod
+    def encodeColor(r,g,b):
+        return BaeVec3d(r,g,b)
     
-    @property
-    def Red(self):
-        return self._red
-    
-    @property
-    def BrightRed(self):
-        return self._red + 8
-    
-    @property
-    def Green(self):
-        return self._green
-    
-    @property
-    def BrightGreen(self):
-        return self._green + 8
-    
-    @property
-    def Yellow(self):
-        return self._yellow
-    
-    @property
-    def BrightYellow(self):
-        return self._yellow + 8
-
-    @property
-    def Blue(self):
-        return self._blue
-    
-    @property
-    def BrightBlue(self):
-        return self._blue + 8
-    
-    @property
-    def Magenta(self):
-        return self._magenta
-    
-    @property
-    def BrightMagenta(self):
-        return self._magenta + 8
-    
-    @property
-    def Cyan(self):
-        return self._cyan
-    
-    @property
-    def BrightCyan(self):
-        return self._cyan + 8
-    
-    @property
-    def White(self):
-        return self._white
-    
-    @property
-    def BrightWhite(self):
-        return self._white + 8
+    @staticmethod
+    def grayscale(s):
+        """
+        s : 0-255 level gray scale, other values will be clamped
+        """
+        grayLv = BaeMathUtil.clamp(s,0,255)
+        return BaeVec3d(grayLv,grayLv,grayLv)
 
 class BaeColorMode:
 
@@ -212,18 +232,18 @@ class BaeTermDrawPipeline:
 
     @property
     def backbuffer(self):
-        return self._buff
+        return self._buff.virtualBuffer
+    
+    @property
+    def backbufferWidth(self):
+        return self._buff.virtualSize.X
+    
+    @property
+    def backbufferHeight(self):
+        return self._buff.virtualSize.Y
 
     @property
-    def getRTHeight(self):
-        return self._buff.height
-    
-    @property
-    def getRTWidth(self):
-        return self._buff.width
-    
-    @property
-    def getColorMode(self):
+    def colorMode(self):
         return self._buff.colorMode
 
     @property
@@ -236,39 +256,33 @@ class BaeTermDrawPipeline:
         """
         self._buff = buf
 
+    def __getRT(self):
+        return self._buff.getVirtualBuffer()
+
     def __draw(self):
-        bw = self.backbuffer.virtualSize.X
-        bh = self.backbuffer.virtualSize.Y
-        vBuf = self.backbuffer.getVirtualBuffer()
+        bw = self.backbufferWidth
+        bh = self.backbufferHeight
+        vBuf = self.__getRT()
         for row in range(bh):
             for col in range(bw):
                 if self.pixelShader != None:
-                    vBuf[row][col] = self.pixelShader(col,row, self.backbuffer)
+                    vBuf[row][col] = self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight))
                 else:
                     for p in draw_list:
                         pass
-
 
     def present(self, clrCol : BaeVec3d):
 
         self.__draw()
 
-        bufferWidth = self.backbuffer.virtualSize.X
-        bufferHeight = self.backbuffer.virtualSize.Y
-
         tempBuffer=[]
-
-        for row in range(0,bufferHeight,2):
-            for col in range(bufferWidth):
-                
-                #nl = ""
-                #if col >= (bufferWidth - 1):
-                #    nl = "\n"
-                nl = "\n" if col >= (bufferWidth - 1) else ""
-                tColr = self.backbuffer.virtualBuffer[row][col]
-                bColr = self.backbuffer.virtualBuffer[row+1][col]
+        for row in range(0,self.backbufferHeight,2):
+            for col in range(self.backbufferWidth):
+                nl = "\n" if col >= (self.backbufferWidth - 1) else ""
+                tColr = self.backbuffer[row][col]
+                bColr = self.backbuffer[row+1][col]
                 # draw per line so we can get debug with visualize
-                pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.getColorMode)
+                pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.colorMode)
                 if self.debugable == True:
                     print(pixelPair, end=nl)
                 else:
@@ -290,36 +304,6 @@ class BaeTermDraw:
         g = max(0, min(255,rgb.Y))
         b = max(0, min(255,rgb.Z))
         return BaeVec3d(round(r),round(g),round(b))
-    
-    # deprecated
-    @staticmethod
-    def encodeColor(rgb, mode):
-        qc = BaeTermDraw.quantify(rgb)
-        match mode:
-            case BaeColorMode.Color8Bits:
-                colorIdx = ColorPallette8bit.RGBIndex(qc.X,qc.Y,qc.Z)
-                return '\x1b[48;5;%dm' % (colorIdx) + " " + '\x1b[0m'
-            case BaeColorMode.Color24Bits:
-                return '\x1b[48;2;%d;%d;%dm' % (qc.X,qc.Y,qc.Z) + " " + '\x1b[0m'
-            case _:
-                assert True, "you should use correct color mode"
-                return '\x1b[31mError Color Mode!\x1b[0m'
-    
-    #deprecated
-    @staticmethod
-    def encode(str, rgb, mode, fg=False):
-        qc = BaeTermDraw.quantify(rgb)
-        match mode:
-            case BaeColorMode.Color8Bits:
-                colorIdx = ColorPallette8bit.RGBIndex(qc.X,qc.Y,qc.Z)
-                return '\x1b[48;5;%dm' % (colorIdx) + str + '\x1b[0m'
-            case BaeColorMode.Color24Bits:
-                return '\x1b[48;2;%d;%d;%dm' % (qc.X,qc.Y,qc.Z) + str + '\x1b[0m'
-            case _:
-                assert True, "you should use correct color mode"
-                return '\x1b[31mError Color Mode!\x1b[0m'
-
-
 
     @staticmethod
     def encodePixel(topColr,botColr,mode):
@@ -329,7 +313,7 @@ class BaeTermDraw:
         tc = BaeTermDraw.quantify(topColr)
         bc = BaeTermDraw.quantify(botColr)
 
-        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b) + '\x1b[0m'
+        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b+10) + '\x1b[0m'
         encode8bit = lambda t,b : '\x1b[48;5;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;5;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
         encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
 
@@ -343,44 +327,6 @@ class BaeTermDraw:
             case _:
                 assert True, "Not supported Color mode"
                 return ''
-
-    @staticmethod
-    def present(pipeCfg : BaeTermDrawPipeline, clrCol = BaeVec3d(0,0,0), **kwargs):
-        """
-        call this to draw a frame
-        pipeCfg: a BaeTermDrawPipeline to config how to draw
-        clrCol: a BaeVec3d type
-        """
-
-        shaderFunc = pipeCfg.getShader()
-        rt = pipeCfg.getBuffer()
-        bDebugDraw = pipeCfg.debugable()
-        tempBuffer = []
-
-        for row in range(pipeCfg.getRTHeight):
-            lum = clrCol
-            for col in range(pipeCfg.getRTWidth):
-                if shaderFunc != None:
-                    lum = shaderFunc(col,row, rt)
-                else: 
-                    for p in draw_list:
-                        if p.x == col and p.y == row:
-                            lum = p.color
-                            break
-                        else:
-                            lum = clrCol
-                nl = ""
-                if col >= (rt.width - 1):
-                    nl = "\n"
-                
-                # draw per line so we can get debug with visualize
-                if bDebugDraw == True:
-                    print(BaeTermDraw.encode(" ",lum,pipeCfg.getColorMode), end=nl)
-                else:
-                    tempBuffer.append(BaeTermDraw.encode(" ",lum, pipeCfg.getColorMode) + nl)
-
-        if bDebugDraw == False:
-            print(''.join(tempBuffer))
 
 
 class PixelCell:

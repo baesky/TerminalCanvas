@@ -90,7 +90,6 @@ class ColorPallette4bit(Enum):
         grayLv = BaeMathUtil.clamp(s,0,1)
         return ColorPallette4bit.black if grayLv == 0 else ColorPallette4bit.white
 
-
 class ColorPallette8bit(Enum):
 
     black = 0
@@ -295,7 +294,21 @@ class BaeTermDrawPipeline:
             for col in range(self.backbufferWidth):
                 self.__getRT()[row][col] = clrColor
 
-    def drawLine(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d):
+    def __clampInBuffer(self,pt:BaeVec2d):
+        return BaeVec2d(round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
+
+    def drawCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d):
+        c = self.__clampInBuffer(center)
+        bw = self.backbufferWidth
+        bh = self.backbufferHeight
+        for row in range(bh):
+            for col in range(bw):
+                dist = BaeVec2d(col,row) - c
+                dist = BaeVec2d.Dot(dist,dist)
+                if dist <= r*r:
+                    self.__getRT()[row][col] = color
+
+    def drawLine2D(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d):
         """
         draw a line segment
         start: where the line start
@@ -306,16 +319,19 @@ class BaeTermDrawPipeline:
         #clamp to safe zone
 
         sx = round(BaeMathUtil.clamp(start.X, 0, self.backbufferWidth))
-        sy = round(BaeMathUtil.clamp(start.X, 0, self.backbufferHeight))
+        sy = round(BaeMathUtil.clamp(start.Y, 0, self.backbufferHeight))
 
         ex = round(BaeMathUtil.clamp(end.X, 0, self.backbufferWidth))
-        ey = round(BaeMathUtil.clamp(end.X, 0, self.backbufferHeight))
+        ey = round(BaeMathUtil.clamp(end.Y, 0, self.backbufferHeight))
 
         # simple DDA
         dx = ex - sx
         dy = ey - sy
         
         steps = abs(dx) if abs(dx) > abs(dy) else abs(dy)
+
+        if steps == 0:
+            return
 
         incX = dx / float(steps)
         incY = dy / float(steps)

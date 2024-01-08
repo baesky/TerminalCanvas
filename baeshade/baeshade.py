@@ -4,6 +4,7 @@ from time import sleep
 from .baeshadeutil import BaeVec2d
 from .baeshadeutil import BaeVec3d
 from typing import Optional, Callable
+from enum import Enum
 
 # gray scale level
 GRAYSCALELEN = 23
@@ -11,7 +12,20 @@ GRAYSCALELEN = 23
 # gray scale index
 GRAYSCALESTART = 232
 
+class ColorPallette4bit(Enum):
+
+    black = 0
+    red = 1
+    green = 2
+    yellow = 3
+    blue = 4
+    magenta = 5
+    cyan = 6
+    white = 7
+
 class ColorPallette8bit:
+    
+    
     """
     ref to https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 
@@ -21,20 +35,11 @@ class ColorPallette8bit:
         for i in range(GRAYSCALELEN):
             self._grayScale.append(GRAYSCALESTART+i)
 
-        self._black = 0
-        self._red = 1
-        self._green = 2
-        self._yellow = 3
-        self._blue = 4
-        self._magenta = 5
-        self._cyan = 6
-        self._white = 7
-
-    """
-    get gray scale color
-    lum: the scale valid range [0,23], which mean from black to white
-    """
     def getGrayScale(self,lum):
+        """
+        get gray scale color
+        lum: the scale valid range [0,23], which mean from black to white
+        """
         assert 0 <= lum <= 23
         return self._grayScale[lum]
 
@@ -232,7 +237,7 @@ class BaeTermDrawPipeline:
         for row in range(bh):
             for col in range(bw):
                 if self.pixelShader != None:
-                    vBuf[col][row] = self.pixelShader(col,row, self.backbuffer)
+                    vBuf[row][col] = self.pixelShader(col,row, self.backbuffer)
                 else:
                     for p in draw_list:
                         pass
@@ -247,22 +252,24 @@ class BaeTermDrawPipeline:
 
         tempBuffer=[]
 
-        for row in range(bufferHeight):
+        for row in range(0,bufferHeight,2):
             for col in range(bufferWidth):
                 
                 #nl = ""
                 #if col >= (bufferWidth - 1):
                 #    nl = "\n"
                 nl = "\n" if col >= (bufferWidth - 1) else ""
-                lum = self.backbuffer.virtualBuffer[col][row]
+                tColr = self.backbuffer.virtualBuffer[row][col]
+                bColr = self.backbuffer.virtualBuffer[row+1][col]
                 # draw per line so we can get debug with visualize
+                pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.getColorMode)
                 if self.debugable == True:
-                    print(BaeTermDraw.encode(" ",self.getColorMode), end=nl)
+                    print(pixelPair, end=nl)
                 else:
-                    tempBuffer.append(BaeTermDraw.encode(" ",lum, self.getColorMode) + nl)
+                    tempBuffer.append(pixelPair + nl)
 
         if self.debugable == False:
-            print(''.join(tempBuffer))
+            print(''.join(tempBuffer),flush=True)
 
 
 
@@ -278,6 +285,7 @@ class BaeTermDraw:
         b = max(0, min(255,rgb.Z))
         return BaeVec3d(round(r),round(g),round(b))
     
+    # deprecated
     @staticmethod
     def encodeColor(rgb, mode):
         qc = BaeTermDraw.quantify(rgb)
@@ -291,6 +299,7 @@ class BaeTermDraw:
                 assert True, "you should use correct color mode"
                 return '\x1b[31mError Color Mode!\x1b[0m'
     
+    #deprecated
     @staticmethod
     def encode(str, rgb, mode, fg=False):
         qc = BaeTermDraw.quantify(rgb)
@@ -315,8 +324,8 @@ class BaeTermDraw:
         bc = BaeTermDraw.quantify(botColr)
 
         encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b) + '\x1b[0m'
-        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) + '\x1b[0m'
-        encode24bit = lambda t, b : '\x1b[48;2;%dm' % (b) + '\x1b[38;2;%dm▀' % (t) + '\x1b[0m'
+        encode8bit = lambda t,b : '\x1b[48;5;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;5;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
+        encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
 
         match mode:
             case BaeColorMode.Color4Bits:

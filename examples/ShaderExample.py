@@ -81,6 +81,12 @@ def pixelShader(x,y,b):
 
     NDL = max(0.0, min(1.0,vec3.Dot(n,L)))
 
+    shadowRayPos = p + n*0.01
+    shadowRay = Ray(shadowRayPos,L)
+    d,n,p,c1 = sdfScene(shadowRay, 0.1, 30.0)
+    if d < 10.0:
+        c = c * d/10.0
+
     output = c * (ltCol *  NDL)
 
     return output

@@ -89,7 +89,7 @@ def pixelShader(x,y,b):
 buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
 
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=pixelShader,debug=False)
+drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=pixelShader)
 
 # run one frame
 drawPipe.present(bgcolor)

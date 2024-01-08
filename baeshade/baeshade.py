@@ -214,7 +214,7 @@ class BaeBuffer:
 class BaeTermDrawPipeline:
     def __init__(self, 
                  buf:BaeBuffer, 
-                 ps: Optional[Callable[[int,int, BaeBuffer],BaeVec3d]],
+                 ps: Optional[Callable[[int,int, BaeBuffer],BaeVec3d]] = None,
                  debug = False):
         """
         buf: render target

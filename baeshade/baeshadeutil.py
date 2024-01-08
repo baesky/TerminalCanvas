@@ -22,6 +22,12 @@ class BaeVec2d:
     def __add__(self, o):
         return BaeVec2d(self.X + o.X, self.Y + o.Y)
     
+    def __iadd__(self, o):
+        if isinstance(o, float):
+            return BaeVec2d(self.X + o, self.Y + o)
+        else:
+            return BaeVec2d(self.X + o.X, self.Y + o.Y)
+
     def __sub__(self,o):
         return BaeVec2d(self.X - o.X, self.Y - o.Y)
 
@@ -67,9 +73,21 @@ class BaeVec3d(BaeVec2d):
     def __add__(self,o):
         return BaeVec3d(self.X + o.X, self.Y + o.Y, self.Z + o.Z)
 
+    def __iadd__(self,o):
+        if isinstance(o, float):
+            return BaeVec3d(self.X + o, self.Y + o, self.Z + o)
+        else:
+            return BaeVec3d(self.X + o.X, self.Y + o.Y, self.Z + o.Z)
+
     def __sub__(self,o):
         return BaeVec3d(self.X - o.X, self.Y - o.Y, self.Z - o.Z)
     
+    def __isub__(self,o):
+        if isinstance(o, float):
+            return BaeVec3d(self.X - o, self.Y - o, self.Z - o)
+        else:
+            return BaeVec3d(self.X - o.X, self.Y - o.Y, self.Z - o.Z)
+
     def __mul__(self, f):
         if isinstance(f, float):
             return BaeVec3d(self.X * f, self.Y * f, self.Z * f )
@@ -104,3 +122,4 @@ class BaeMathUtil:
         clamp value v at: b <= v <= t
         """
         return max(b, min(v,t))
+    

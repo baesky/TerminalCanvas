@@ -7,6 +7,7 @@ from .baeshadeutil import BaeMathUtil
 from typing import Optional, Callable
 from enum import Enum
 
+
 # gray scale level
 GRAYSCALELEN = 23
 
@@ -258,18 +259,18 @@ class BaeTermDrawPipeline:
         return self._buff.getVirtualBuffer()
 
     def __draw(self):
+
+        if self.pixelShader == None:
+            return
+
         bw = self.backbufferWidth
         bh = self.backbufferHeight
         vBuf = self.__getRT()
         for row in range(bh):
             for col in range(bw):
-                if self.pixelShader != None:
-                    vBuf[row][col] = self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight))
-                else:
-                    for p in draw_list:
-                        pass
+                vBuf[row][col] = self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight))
 
-    def present(self, clrCol : BaeVec3d):
+    def present(self):
 
         self.__draw()
 
@@ -289,6 +290,43 @@ class BaeTermDrawPipeline:
         if self.debugable == False:
             print(''.join(tempBuffer),flush=True)
 
+    def clearScene(self,clrColor:BaeVec3d):
+        for row in range(self.backbufferHeight):
+            for col in range(self.backbufferWidth):
+                self.__getRT()[row][col] = clrColor
+
+    def drawLine(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d):
+        """
+        draw a line segment
+        start: where the line start
+        end: where the line ends
+        color: the line colors
+        """
+        
+        #clamp to safe zone
+
+        sx = round(BaeMathUtil.clamp(start.X, 0, self.backbufferWidth))
+        sy = round(BaeMathUtil.clamp(start.X, 0, self.backbufferHeight))
+
+        ex = round(BaeMathUtil.clamp(end.X, 0, self.backbufferWidth))
+        ey = round(BaeMathUtil.clamp(end.X, 0, self.backbufferHeight))
+
+        # simple DDA
+        dx = ex - sx
+        dy = ey - sy
+        
+        steps = abs(dx) if abs(dx) > abs(dy) else abs(dy)
+
+        incX = dx / float(steps)
+        incY = dy / float(steps)
+        
+        ptX = sx
+        ptY = sy
+        for x in range(steps):
+            self.__getRT()[round(ptY)][round(ptX)] = color
+            ptX += incX
+            ptY += incY
+            
 
 
 class BaeTermDraw:

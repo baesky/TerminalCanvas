@@ -91,5 +91,8 @@ buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=pixelShader)
 
+#clear canvas
+drawPipe.clearScene(bgcolor)
+
 # run one frame
-drawPipe.present(bgcolor)
+drawPipe.present()

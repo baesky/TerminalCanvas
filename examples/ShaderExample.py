@@ -14,7 +14,7 @@ def spSdf(v):
     d = v - s
     dist = d.Length - 1.0
 
-    return dist, vec3(52,0,0)
+    return dist, vec3(128,0,0)
 
 def spFloor(v):
     return v.Y, vec3(128,128,128)

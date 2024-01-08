@@ -195,21 +195,19 @@ class BaeBuffer:
     @property
     def colorMode(self):
         return self._colormode
-
-    @property
-    def width(self):
-        return self._size.X
-
-    @property
-    def height(self):
-        return self._size.Y
     
     @property
     def virtualSize(self):
+        """
+        Terminal virutal area: one character contains 2 vertical subpixels
+        """
         return self._vSize
     
     @property
-    def canvasSize(self):
+    def pyhicalSize(self):
+        """
+        Terminal area: Rows multiplied by columns
+        """
         return self._termSize
 
 

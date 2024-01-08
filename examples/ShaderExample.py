@@ -1,11 +1,12 @@
+"""Example How to draw use a shader"""
+
 import baeshade as bs
 import math
 
-ray = bs.BaeRay
+Ray = bs.BaeRay
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 bgcolor = vec3(0,0,0)
-baedraw = bs.BaeTermDraw
 
 def spSdf(v):
     # define a sphere in 3d location, z-front
@@ -57,16 +58,18 @@ def sdfScene(ray,start,end,steps=100):
 
     return end, vec3(), vec3(), bgcolor
 
-def ps(x,y,b):
-
-    uv = vec2(x,y) / b
+def initRay(x,y,buffsize,eye):
+    uv = vec2(x,y) / buffsize
     uv -= 0.5
     uv.SetY(uv.Y * -1.0)
 
-    eye = vec3(0,1,0)
     dir = vec3(uv.X,uv.Y,1).Normalize()
+    return Ray(eye,dir)
 
-    d,n,p,c = sdfScene(ray(eye,dir), 0.1, 100)
+def pixelShader(x,y,b):
+
+    eye = vec3(0,1,0)
+    d,n,p,c = sdfScene(initRay(x,y,b,eye), 0.1, 100)
 
     if n.IsNearZero == True:
         return bgcolor
@@ -84,7 +87,9 @@ def ps(x,y,b):
 
 # set a buffer
 buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
-drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps,debug=False)
+
+# config pipeline
+drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=pixelShader,debug=False)
 
 # run one frame
 drawPipe.present(bgcolor)

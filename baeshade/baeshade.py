@@ -23,6 +23,10 @@ class ColorPallette4bit(Enum):
     cyan = 6
     white = 7
 
+    @staticmethod
+    def encodeColor(r,g,b):
+        return 31#16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5)
+
 class ColorPallette8bit:
     
     
@@ -51,6 +55,10 @@ class ColorPallette8bit:
     @staticmethod
     def RGBIndex(r,g,b):
         return 16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5) 
+
+    @staticmethod
+    def encodeColor(r,g,b):
+        return 16 + int(r/255.0 * 5) * 36 + int(g/255.0 * 5) * 6 + int(b/255.0 * 5)
 
     @property
     def Black(self):
@@ -115,9 +123,6 @@ class ColorPallette8bit:
     @property
     def BrightWhite(self):
         return self._white + 8
-
-
-baeColorPallette = ColorPallette8bit()
 
 class BaeColorMode:
 
@@ -221,6 +226,7 @@ class BaeTermDrawPipeline:
     def getColorMode(self):
         return self._buff.colorMode
 
+    @property
     def debugable(self):
         return self._enableDebug
 
@@ -329,9 +335,9 @@ class BaeTermDraw:
 
         match mode:
             case BaeColorMode.Color4Bits:
-                return encode4bit(tc,bc)
+                return encode4bit(ColorPallette4bit.encodeColor(tc.X,tc.Y,tc.Z),ColorPallette4bit.encodeColor(bc.X,bc.Y,bc.Z))
             case BaeColorMode.Color8Bits:
-                return encode8bit(tc,bc)
+                return encode4bit(ColorPallette8bit.encodeColor(tc.X,tc.Y,tc.Z),ColorPallette8bit.encodeColor(bc.X,bc.Y,bc.Z))
             case BaeColorMode.Color24Bits:
                 return encode24bit(tc,bc)
             case _:

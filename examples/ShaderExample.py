@@ -84,7 +84,7 @@ def ps(x,y,b):
 
 # set a buffer
 buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
-drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps)
+drawPipe = bs.BaeTermDrawPipeline(buf=buf,ps=ps,debug=True)
 
 # run one frame
-drawPipe.present(clrCol=bgcolor)
+drawPipe.present(bgcolor)

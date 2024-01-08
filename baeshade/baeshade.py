@@ -297,6 +297,9 @@ class BaeTermDrawPipeline:
     def __clampInBuffer(self,pt:BaeVec2d):
         return BaeVec2d(round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
+    def drawPixel(self, pt:BaeVec2d, color:BaeVec3d):
+        self.__getRT()[pt.Y][pt.X] = color
+
     def drawCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d):
         c = self.__clampInBuffer(center)
         bw = self.backbufferWidth

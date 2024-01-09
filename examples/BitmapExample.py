@@ -9,10 +9,12 @@ vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
 
 #read a pic
-path = os.path.join(os.getcwd(),"resource/sample.png")
+path = os.path.join(os.getcwd(),"resource/sprite.png")
 pic = Image.open(path)
 
-bmp = pic.convert('RGB')
+s = pic.crop((0, 0, 192, 192)).resize((64,64))
+
+bmp = s.convert('RGB')
 
 # set a buffer
 buf = bs.BaeBuffer(bmp.width,round(bmp.height / 2), mode=bs.BaeColorMode.Color24Bits)

@@ -210,6 +210,9 @@ class BaeBuffer:
         """
         return self._termSize
 
+    def fillAt(self,x,y,color):
+        self._virtualBuffer[y][x] = color
+
 
 class BaeTermDrawPipeline:
     def __init__(self, 
@@ -269,7 +272,10 @@ class BaeTermDrawPipeline:
             for col in range(bw):
                 vBuf[row][col] = self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight))
 
-    def present(self):
+    def present(self, exlusiveMode = False):
+
+        #if exlusiveMode == True:
+        #    print('')
 
         self.__draw()
 
@@ -383,22 +389,4 @@ class BaeTermDraw:
                 assert True, "Not supported Color mode"
                 return ''
 
-
-class PixelCell:
-    """
-    data on particular location
-    """
-    def __init__(self, x, y, color):
-        self.x = x
-        self.y = y
-        self.color = color
-
-draw_list = []
-def drawPallette(x,y,color):
-    """
-    set a color on the location you specified
-    x,y: where the color will shade on the buffer
-    color: color pallette
-    """
-    draw_list.append(PixelCell(x,y,color))
 

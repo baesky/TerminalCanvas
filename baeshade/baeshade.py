@@ -241,6 +241,7 @@ class BaeTermDrawPipeline:
         self._buff = buf
         self._ps = ps
         self._enableDebug = debug
+        self._perf = 0
 
     @property
     def pixelShader(self):
@@ -261,6 +262,13 @@ class BaeTermDrawPipeline:
     @property
     def colorMode(self):
         return self._buff.colorMode
+
+    @property
+    def pipelinePerf(self)->float:
+        """
+        whole pipeline excute time elapse in seconds
+        """
+        return self._perf
 
     @property
     def debugable(self):
@@ -298,6 +306,9 @@ class BaeTermDrawPipeline:
                       True: content will try to display at top-left of the term
                       False: content will display after command line 
         """
+        
+        singleRunPerf = BaeshadeUtil.Stopwatch()
+        
         if exlusiveMode == True:
             BaeshadeUtil.resetCursorPos()
 
@@ -319,6 +330,8 @@ class BaeTermDrawPipeline:
                 self.__flush(tempBuffer)            
             else:
                 self.__flush(self._buff._cache)
+
+        self._perf = singleRunPerf.stop()
 
     def clearScene(self,clrColor:BaeVec3d):
         """

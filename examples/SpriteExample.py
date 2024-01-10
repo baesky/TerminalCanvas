@@ -38,18 +38,18 @@ drawPipe = bs.BaeTermDrawPipeline(buf=seq[0])
 idx = 0
 prev_time = time.perf_counter()
 
+myTimer = util.Stopwatch()
+
 try:
     util.showCursor(False)
     while True:
         drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
         drawPipe.present(exlusiveMode=True)
         idx += 1
-        now_time = time.perf_counter()
-        delta = now_time - prev_time
+        delta = myTimer.last()
         if  delta < DisplayRate:
             time.sleep(DisplayRate - delta)
-        prev_time = time.perf_counter()
-        print('fps:%d, perf:%d' % (FPS,round(1.0 / delta)),end="")
+        print('fps:%d, perf:%d' % (FPS,round(1.0 / drawPipe.pipelinePerf)),end="")
 except KeyboardInterrupt:
     util.clearScreen()
     util.showCursor(True)

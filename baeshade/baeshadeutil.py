@@ -1,5 +1,6 @@
 
 from enum import Enum
+import time
 
 class BaeshadeUtil:
     class EncodeTable(str,Enum):
@@ -24,5 +25,29 @@ class BaeshadeUtil:
     @staticmethod
     def clearScreen():
         print(BaeshadeUtil.EncodeTable.Erase % (2), end="")
+
+
+    class Stopwatch():
+        """
+        a simple time measure util, in seconds
+        """
+        
+        def __init__(self):
+            self._prevTime = time.perf_counter()
+
+        def last(self):
+            """
+            use this for fps calculate
+            """
+            nowTime = time.perf_counter()
+            lastTime = nowTime - self._prevTime
+            self._prevTime = nowTime
+            return lastTime
+
+        def stop(self) -> float:
+            """
+            return time elapse from prev timing
+            """
+            return time.perf_counter() - self._prevTime
 
     

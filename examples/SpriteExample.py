@@ -9,6 +9,9 @@ vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
 
+FPS = 10
+DisplayRate = 1.0 / FPS
+
 #read a pic
 path = os.path.join(os.getcwd(),"resource/sprite.png")
 pic = Image.open(path)
@@ -33,15 +36,20 @@ drawPipe = bs.BaeTermDrawPipeline(buf=seq[0])
 idx = 0
 prev_time = time.perf_counter()
 
-while True:
-    print('\x1b[H',end="")
-    drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
-    drawPipe.present()
-    idx += 1
-    now_time = time.perf_counter()
-    delta = now_time - prev_time
-    if  delta < 0.1:
-        time.sleep(0.1 - delta)
-    prev_time = time.perf_counter()
-    print('fps:%d' % (round(1.0 / delta)),end="")
+try:
+    print('\x1b[?25l',end="")
+    while True:
+        drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
+        drawPipe.present(exlusiveMode=True)
+        idx += 1
+        now_time = time.perf_counter()
+        delta = now_time - prev_time
+        if  delta < DisplayRate:
+            time.sleep(DisplayRate - delta)
+        prev_time = time.perf_counter()
+        print('fps:%d, perf:%d' % (FPS,round(1.0 / delta)),end="")
+except KeyboardInterrupt:
+    print('\x1b[2J',end="",flush=True)
+    print('\x1b[?25h\x1b[H',end="",flush=True)
+
 

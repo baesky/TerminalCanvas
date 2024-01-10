@@ -1,18 +1,15 @@
 import os
 import datetime
 from time import sleep
-from .baeshadeutil import BaeVec2d
-from .baeshadeutil import BaeVec3d
-from .baeshadeutil import BaeMathUtil
+from .baeshademath import BaeVec2d
+from .baeshademath import BaeVec3d
+from .baeshademath import BaeMathUtil
+from .baeshadeutil import BaeshadeUtil
 from typing import Optional, Callable
 from enum import Enum
 
 
-# gray scale level
-GRAYSCALELEN = 23
-
-# gray scale index
-GRAYSCALESTART = 232
+BAECODEX = BaeshadeUtil.EncodeTable
 
 # ref to https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 
@@ -191,6 +188,9 @@ class BaeBuffer:
     @property
     def virtualBuffer(self):
         return self._virtualBuffer
+    
+    def getPixel(self,x:int,y:int):
+        return self._virtualBuffer[y][x]
 
     @property
     def colorMode(self):
@@ -257,54 +257,60 @@ class BaeTermDrawPipeline:
         """
         self._buff = buf
 
-    def __getRT(self):
-        return self._buff.getVirtualBuffer()
-
-    def __draw(self):
+    def __runPixelShader(self):
 
         if self.pixelShader == None:
             return
 
         bw = self.backbufferWidth
         bh = self.backbufferHeight
-        vBuf = self.__getRT()
+
         for row in range(bh):
             for col in range(bw):
-                vBuf[row][col] = self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight))
+                self.drawPixel(col,row, self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight)))
 
-    def present(self, exlusiveMode = False):
+    def __flush(self, buffstr):
+        print(buffstr,flush=True)
 
-        #if exlusiveMode == True:
-        #    print('')
+    def present(self, exlusiveMode:bool = False):
+        """
+        output backbuffer to terminal
+        exlusiveMode: bool, 
+                      True: content will try to display at top-left of the term
+                      False: content will display after command line 
+        """
+        if exlusiveMode == True:
+            print(BAECODEX.CursorHomePos,end="")
 
-        self.__draw()
+        self.__runPixelShader()
 
-        tempBuffer=[]
-        for row in range(0,self.backbufferHeight,2):
-            for col in range(self.backbufferWidth):
-                nl = "\n" if col >= (self.backbufferWidth - 1) else ""
-                tColr = self.backbuffer[row][col]
-                bColr = self.backbuffer[row+1][col]
-                # draw per line so we can get debug with visualize
-                pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.colorMode)
-                if self.debugable == True:
+        # todo: refactor debug workflow
+        if self.debugable == True:
+            for row in range(0,self.backbufferHeight,2):
+                for col in range(self.backbufferWidth):
+                    nl = BAECODEX.NewLine if col >= (self.backbufferWidth - 1) else BAECODEX.Empty
+                    tColr = self.backbuffer[row][col]
+                    bColr = self.backbuffer[row+1][col]
+                    # draw per line so we can get debug with visualize
+                    pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.colorMode)
                     print(pixelPair, end=nl)
-                else:
-                    tempBuffer.append(pixelPair + nl)
-
-        if self.debugable == False:
-            print(''.join(tempBuffer),flush=True)
+        else:
+            tempBuffer = BaeTermDraw.encodeBuffer(self._buff, self.colorMode)
+            self.__flush(tempBuffer)            
 
     def clearScene(self,clrColor:BaeVec3d):
+        """
+        clear backbuffer to clrColor
+        """
         for row in range(self.backbufferHeight):
             for col in range(self.backbufferWidth):
-                self.__getRT()[row][col] = clrColor
+                self.drawPixel(col,row, clrColor)
 
     def __clampInBuffer(self,pt:BaeVec2d):
         return BaeVec2d(round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
-    def drawPixel(self, pt:BaeVec2d, color:BaeVec3d):
-        self.__getRT()[pt.Y][pt.X] = color
+    def drawPixel(self,x:int,y:int,color:BaeVec3d):
+        self._buff.fillAt(x,y,color)
 
     def drawCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d):
         c = self.__clampInBuffer(center)
@@ -315,7 +321,7 @@ class BaeTermDrawPipeline:
                 dist = BaeVec2d(col,row) - c
                 dist = BaeVec2d.Dot(dist,dist)
                 if dist <= r*r:
-                    self.__getRT()[row][col] = color
+                    self.drawPixel(col,row,color)
 
     def drawLine2D(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d):
         """
@@ -348,7 +354,7 @@ class BaeTermDrawPipeline:
         ptX = sx
         ptY = sy
         for x in range(steps):
-            self.__getRT()[round(ptY)][round(ptX)] = color
+            self.drawPixel(ptX,ptY,color)
             ptX += incX
             ptY += incY
             
@@ -390,3 +396,23 @@ class BaeTermDraw:
                 return ''
 
 
+    @staticmethod
+    def encodeBuffer(buff:BaeBuffer, cmode:BaeColorMode = BaeColorMode.Color8Bits):
+        """
+        encode buffer to ANSI Esc Code string list for presentation
+        """
+        w = buff.virtualSize.X
+        h = buff.virtualSize.Y
+
+        encodeBuff=[]
+
+        for row in range(0,h,2):
+            for col in range(w):
+                nl = BAECODEX.NewLine if col >= (w - 1) else BAECODEX.Empty
+                tColr = buff.getPixel(col,row)
+                bColr = buff.getPixel(col,row+1)
+                # draw per line so we can get debug with visualize
+                subPixels = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =cmode)
+                encodeBuff.append(subPixels + nl)
+
+        return ''.join(encodeBuff)

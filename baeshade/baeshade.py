@@ -324,7 +324,8 @@ class BaeTermDrawPipeline:
                     bColr = self.backbuffer[row+1][col]
                     # draw per line so we can get debug with visualize
                     pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.colorMode)
-                    print(pixelPair, end=nl)
+                    #print(pixelPair, end=nl)
+                    self.__flush(pixelPair + nl)
         else:
             if self._buff.isValid is False:
                 tempBuffer = BaeTermDraw.encodeBuffer(self._buff, self.colorMode)

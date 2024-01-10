@@ -32,7 +32,7 @@ for y in range(bmp.height):
         # alpha pixel will trans to black during image convert to rgb, how to identify origin black?
         if r == 0 and g == 0 and b == 0:
             continue
-        drawPipe.drawPixel(vec2(x,y), vec3(r,g,b))
+        drawPipe.drawPixel(x,y, vec3(r,g,b))
 
 # run one frame
 drawPipe.present()

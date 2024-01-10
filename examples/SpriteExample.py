@@ -36,7 +36,6 @@ for x in range(7):
 drawPipe = bs.BaeTermDrawPipeline(buf=seq[0])
 
 idx = 0
-prev_time = time.perf_counter()
 
 myTimer = util.Stopwatch()
 

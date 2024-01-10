@@ -40,6 +40,7 @@ idx = 0
 myTimer = util.Stopwatch()
 
 try:
+    util.ScreenMode(True)
     util.showCursor(False)
     while True:
         drawPipe.bindRenderTaret(seq[idx % seq.__len__()])

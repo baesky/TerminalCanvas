@@ -11,6 +11,8 @@ class BaeshadeUtil:
         HideCursor = '\x1b[?25l'
         ShowCursor = '\x1b[?25h'
         Erase = '\x1b[%dJ'
+        EnterAltBuffer = '\x1b[?1049h'
+        LeaveAltBuffer = '\x1b[?1049l'
 
         def __str__(self) -> str:
             return self.value
@@ -18,6 +20,10 @@ class BaeshadeUtil:
     @staticmethod
     def output(str):
         sys.stdout.write(str)
+
+    @staticmethod
+    def ScreenMode(bExclusive:bool):
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.EnterAltBuffer if bExclusive else BaeshadeUtil.EncodeTable.LeaveAltBuffer)
 
     @staticmethod
     def showCursor(bShow:bool):
@@ -39,6 +45,7 @@ class BaeshadeUtil:
     def quit():
         BaeshadeUtil.clearScreen()
         BaeshadeUtil.showCursor(True)
+        BaeshadeUtil.ScreenMode(False)
         BaeshadeUtil.resetCursorPos()
 
     class Stopwatch():

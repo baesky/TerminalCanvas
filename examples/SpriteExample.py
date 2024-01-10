@@ -10,7 +10,7 @@ vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
 util = bs.BaeshadeUtil
 
-FPS = 10
+FPS = 18
 DisplayRate = 1.0 / FPS
 
 #read a pic
@@ -49,7 +49,7 @@ try:
         delta = myTimer.last()
         if  delta < DisplayRate:
             time.sleep(DisplayRate - delta)
-        print('fps:%d, perf:%d' % (FPS,round(1.0 / drawPipe.pipelinePerf)),end="")
+        print('fps:%d, perf:%f ms' % (FPS,drawPipe.pipelinePerf),end="")
 except KeyboardInterrupt:
     util.quit()
 

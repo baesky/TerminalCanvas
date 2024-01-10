@@ -35,25 +35,25 @@ class BaeshadeUtil:
 
     class Stopwatch():
         """
-        a simple time measure util, in seconds
+        a simple time measure util, in milliseconds
         """
         
         def __init__(self):
-            self._prevTime = time.perf_counter()
+            self._prevTime = time.perf_counter_ns()
 
-        def last(self):
+        def last(self)->float:
             """
             use this for fps calculate
             """
-            nowTime = time.perf_counter()
+            nowTime = time.perf_counter_ns()
             lastTime = nowTime - self._prevTime
             self._prevTime = nowTime
-            return lastTime
+            return lastTime * 1e-6
 
         def stop(self) -> float:
             """
             return time elapse from prev timing
             """
-            return time.perf_counter() - self._prevTime
+            return (time.perf_counter_ns() - self._prevTime) * 1e-6
 
     

@@ -181,6 +181,8 @@ class BaeBuffer:
         self._vSize = BaeVec2d(w,h * 2)
         self._colormode = mode
         self._virtualBuffer = [ [0 for x in range(w)] for y in range(h*2)]
+        self._cache = None
+        self._bDirt = False
 
     def getVirtualBuffer(self):
         return self._virtualBuffer
@@ -210,9 +212,22 @@ class BaeBuffer:
         """
         return self._termSize
 
+    @property
+    def isValid(self) -> bool:
+        return self._bDirt == False
+
     def fillAt(self,x,y,color):
         self._virtualBuffer[y][x] = color
+        self._bDirt = True
 
+    def genEncode(self):
+        self._cache = BaeTermDraw.encodeBuffer(self, self.colorMode)
+        self._bDirt = False
+        return self._cache
+    
+    @property
+    def cache(self):
+        return self._cache
 
 class BaeTermDrawPipeline:
     def __init__(self, 
@@ -272,6 +287,10 @@ class BaeTermDrawPipeline:
     def __flush(self, buffstr):
         print(buffstr,flush=True)
 
+    def __runFixedPipe(self):
+        self.__runPixelShader()
+
+
     def present(self, exlusiveMode:bool = False):
         """
         output backbuffer to terminal
@@ -280,7 +299,7 @@ class BaeTermDrawPipeline:
                       False: content will display after command line 
         """
         if exlusiveMode == True:
-            print(BAECODEX.CursorHomePos,end="")
+            BaeshadeUtil.resetCursorPos()
 
         self.__runPixelShader()
 
@@ -295,8 +314,11 @@ class BaeTermDrawPipeline:
                     pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.colorMode)
                     print(pixelPair, end=nl)
         else:
-            tempBuffer = BaeTermDraw.encodeBuffer(self._buff, self.colorMode)
-            self.__flush(tempBuffer)            
+            if self._buff.isValid is False:
+                tempBuffer = BaeTermDraw.encodeBuffer(self._buff, self.colorMode)
+                self.__flush(tempBuffer)            
+            else:
+                self.__flush(self._buff._cache)
 
     def clearScene(self,clrColor:BaeVec3d):
         """

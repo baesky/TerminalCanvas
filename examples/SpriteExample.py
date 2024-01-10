@@ -8,6 +8,7 @@ import time
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
+util = bs.BaeshadeUtil
 
 FPS = 10
 DisplayRate = 1.0 / FPS
@@ -28,6 +29,7 @@ for x in range(7):
         for col in range(p.width):
             r,g,b = p.getpixel((col,row))
             buf.fillAt(col, row, vec3(r,g,b))
+    buf.genEncode()
     seq.append(buf)
 
 # config pipeline
@@ -37,7 +39,7 @@ idx = 0
 prev_time = time.perf_counter()
 
 try:
-    print('\x1b[?25l',end="")
+    util.showCursor(False)
     while True:
         drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
         drawPipe.present(exlusiveMode=True)
@@ -49,7 +51,8 @@ try:
         prev_time = time.perf_counter()
         print('fps:%d, perf:%d' % (FPS,round(1.0 / delta)),end="")
 except KeyboardInterrupt:
-    print('\x1b[2J',end="",flush=True)
-    print('\x1b[?25h\x1b[H',end="",flush=True)
+    util.clearScreen()
+    util.showCursor(True)
+    util.resetCursorPos()
 
 

@@ -32,16 +32,16 @@ drawPipe = bs.BaeTermDrawPipeline(buf=seq[0])
 
 idx = 0
 prev_time = time.perf_counter()
+
 while True:
-    print('\x1b[H',end="",sep="")
+    print('\x1b[H',end="")
     drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
     drawPipe.present()
     idx += 1
     now_time = time.perf_counter()
     delta = now_time - prev_time
-    if  delta < 0.04:
-        time.sleep(0.04 - delta)
-        prev_time = time.perf_counter()
-    
-    print('fps:%d' % (round(1.0 / delta)))
+    if  delta < 0.1:
+        time.sleep(0.1 - delta)
+    prev_time = time.perf_counter()
+    print('fps:%d' % (round(1.0 / delta)),end="")
 

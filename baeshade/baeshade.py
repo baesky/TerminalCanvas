@@ -293,7 +293,8 @@ class BaeTermDrawPipeline:
                 self.drawPixel(col,row, self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight)))
 
     def __flush(self, buffstr):
-        print(buffstr,flush=True)
+        #print(buffstr,flush=False)
+        BaeshadeUtil.output(buffstr)
 
     def __runFixedPipe(self):
         self.__runPixelShader()

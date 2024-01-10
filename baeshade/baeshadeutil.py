@@ -1,6 +1,7 @@
 
 from enum import Enum
 import time
+import sys
 
 class BaeshadeUtil:
     class EncodeTable(str,Enum):
@@ -13,18 +14,25 @@ class BaeshadeUtil:
 
         def __str__(self) -> str:
             return self.value
-        
+    
+    @staticmethod
+    def output(str):
+        sys.stdout.write(str)
+
     @staticmethod
     def showCursor(bShow:bool):
-        print(BaeshadeUtil.EncodeTable.ShowCursor if bShow else BaeshadeUtil.EncodeTable.HideCursor ,end="")
+        #print(BaeshadeUtil.EncodeTable.ShowCursor if bShow else BaeshadeUtil.EncodeTable.HideCursor ,end="")
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.ShowCursor if bShow else BaeshadeUtil.EncodeTable.HideCursor)
 
     @staticmethod
     def resetCursorPos(x:int = 1,y:int = 1):
-        print(BaeshadeUtil.EncodeTable.CursorHomePos % (x,y), end="")
+        #print(BaeshadeUtil.EncodeTable.CursorHomePos % (x,y), end="")
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.CursorHomePos % (x,y))
 
     @staticmethod
     def clearScreen():
-        print(BaeshadeUtil.EncodeTable.Erase % (2), end="")
+        #print(BaeshadeUtil.EncodeTable.Erase % (2), end="")
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.Erase % (2))
 
 
     @staticmethod

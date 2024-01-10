@@ -27,6 +27,12 @@ class BaeshadeUtil:
         print(BaeshadeUtil.EncodeTable.Erase % (2), end="")
 
 
+    @staticmethod
+    def quit():
+        BaeshadeUtil.clearScreen()
+        BaeshadeUtil.showCursor(True)
+        BaeshadeUtil.resetCursorPos()
+
     class Stopwatch():
         """
         a simple time measure util, in seconds

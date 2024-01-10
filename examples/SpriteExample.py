@@ -51,8 +51,6 @@ try:
             time.sleep(DisplayRate - delta)
         print('fps:%d, perf:%d' % (FPS,round(1.0 / drawPipe.pipelinePerf)),end="")
 except KeyboardInterrupt:
-    util.clearScreen()
-    util.showCursor(True)
-    util.resetCursorPos()
+    util.quit()
 
 

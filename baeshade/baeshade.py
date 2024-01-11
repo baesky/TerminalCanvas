@@ -170,7 +170,7 @@ class BaeBuffer:
     virtual buffer for drawing
     """
     
-    def __init__(self,w,h,mode=BaeColorMode.Color8Bits):
+    def __init__(self,w,h,mode:BaeColorMode=BaeColorMode.Color8Bits):
         """
         w:terminal canvas width
         h:terminal canvas height
@@ -221,7 +221,7 @@ class BaeBuffer:
         self._bDirt = True
 
     def genEncode(self):
-        self._cache = BaeTermDraw.encodeBuffer(self, self.colorMode)
+        self._cache = BaeTermDraw.encodeBuffer(self)
         self._bDirt = False
         return self._cache
     
@@ -345,7 +345,7 @@ class BaeTermDrawPipeline:
                     self.__flush(pixelPair + nl)
         else:
             if self._buff.isValid is False:
-                tempBuffer = BaeTermDraw.encodeBuffer(self._buff, self.colorMode)
+                tempBuffer = BaeTermDraw.encodeBuffer(self._buff)
                 self.__flush(tempBuffer)            
             else:
                 self.__flush(self._buff._cache)
@@ -435,14 +435,14 @@ class BaeTermDraw:
         bc = BaeTermDraw.quantify(botColr)
 
         encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b+10) + '\x1b[0m'
-        encode8bit = lambda t,b : '\x1b[48;5;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;5;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
+        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) + '\x1b[0m'
         encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
 
         match mode:
             case BaeColorMode.Color4Bits:
                 return encode4bit(ColorPallette4bit.encodeColor(tc.X,tc.Y,tc.Z),ColorPallette4bit.encodeColor(bc.X,bc.Y,bc.Z))
             case BaeColorMode.Color8Bits:
-                return encode4bit(ColorPallette8bit.encodeColor(tc.X,tc.Y,tc.Z),ColorPallette8bit.encodeColor(bc.X,bc.Y,bc.Z))
+                return encode8bit(ColorPallette8bit.encodeColor(tc.X,tc.Y,tc.Z),ColorPallette8bit.encodeColor(bc.X,bc.Y,bc.Z))
             case BaeColorMode.Color24Bits:
                 return encode24bit(tc,bc)
             case _:
@@ -451,7 +451,7 @@ class BaeTermDraw:
 
 
     @staticmethod
-    def encodeBuffer(buff:BaeBuffer, cmode:BaeColorMode = BaeColorMode.Color8Bits):
+    def encodeBuffer(buff:BaeBuffer):
         """
         encode buffer to ANSI Esc Code string list for presentation
         """
@@ -466,7 +466,7 @@ class BaeTermDraw:
                 tColr = buff.getPixel(col,row)
                 bColr = buff.getPixel(col,row+1)
                 # draw per line so we can get debug with visualize
-                subPixels = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =cmode)
+                subPixels = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =buff.colorMode)
                 encodeBuff.append(subPixels + nl)
 
         return ''.join(encodeBuff)

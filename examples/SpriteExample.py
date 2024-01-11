@@ -24,7 +24,7 @@ for x in range(7):
     ptX = x * 192
     ptY = 0
     p = bmp.crop((ptX, ptY, ptX + 192, ptY + 192)).resize((64,64))
-    buf = bs.BaeBuffer(p.width,round(p.height/2), mode=bs.BaeColorMode.Color24Bits)
+    buf = bs.BaeBuffer(p.width,round(p.height/2), mode=bs.BaeColorMode.Color8Bits)
     for row in range(p.height):
         for col in range(p.width):
             r,g,b = p.getpixel((col,row))

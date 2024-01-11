@@ -40,11 +40,10 @@ idx = 0
 myTimer = util.Stopwatch()
 
 try:
-    util.ScreenMode(True)
-    util.showCursor(False)
+    drawPipe.useExclusiveScreen(True)
     while True:
         drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
-        drawPipe.present(exlusiveMode=True)
+        drawPipe.present()
         idx += 1
         delta = myTimer.last()
         waitTime = DisplayRate - delta * 0.001
@@ -55,8 +54,8 @@ try:
             time.sleep(0)
             waitTime -= myTimer.last() * 0.001
         
-        print('fixed fps:%d, perf:%f ms' % (LimitFPS,drawPipe.pipelinePerf),end="")
+        print('fixed fps:%d, perf:%.3f ms' % (LimitFPS,drawPipe.pipelinePerf),end="")
 except KeyboardInterrupt:
-    util.quit()
+    drawPipe.useExclusiveScreen(False)
 
 

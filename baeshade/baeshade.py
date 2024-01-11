@@ -242,6 +242,11 @@ class BaeTermDrawPipeline:
         self._ps = ps
         self._enableDebug = debug
         self._perf = 0
+        self._screenMode = False
+
+    @property
+    def isExclusiveMode(self):
+        return self._screenMode
 
     @property
     def pixelShader(self):
@@ -274,6 +279,18 @@ class BaeTermDrawPipeline:
     def debugable(self):
         return self._enableDebug
 
+    def useExclusiveScreen(self,bExclusive:bool):
+        """
+        true enter alternative screen
+        false back to main screen
+        """
+        self._screenMode = bExclusive
+        BaeshadeUtil.clearScreen()
+        BaeshadeUtil.ExclusiveScreen(bExclusive)
+        BaeshadeUtil.showCursor(bExclusive == False)
+        if bExclusive == False:
+            BaeshadeUtil.resetCursorPos()
+
     def bindRenderTaret(self, buf : BaeBuffer):
         """
         bind a RT to draw
@@ -300,7 +317,7 @@ class BaeTermDrawPipeline:
         self.__runPixelShader()
 
 
-    def present(self, exlusiveMode:bool = False):
+    def present(self):
         """
         output backbuffer to terminal
         exlusiveMode: bool, 
@@ -310,7 +327,7 @@ class BaeTermDrawPipeline:
         
         singleRunPerf = BaeshadeUtil.Stopwatch()
         
-        if exlusiveMode == True:
+        if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
 
         self.__runPixelShader()

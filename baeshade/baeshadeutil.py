@@ -22,7 +22,7 @@ class BaeshadeUtil:
         sys.stdout.write(str)
 
     @staticmethod
-    def ScreenMode(bExclusive:bool):
+    def ExclusiveScreen(bExclusive:bool):
         BaeshadeUtil.output(BaeshadeUtil.EncodeTable.EnterAltBuffer if bExclusive else BaeshadeUtil.EncodeTable.LeaveAltBuffer)
 
     @staticmethod
@@ -44,7 +44,6 @@ class BaeshadeUtil:
     @staticmethod
     def quit():
         BaeshadeUtil.clearScreen()
-        BaeshadeUtil.ScreenMode(False)
         BaeshadeUtil.showCursor(True)
         BaeshadeUtil.resetCursorPos()
 

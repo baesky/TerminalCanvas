@@ -14,8 +14,8 @@ drawPipe = bs.BaeTermDrawPipeline(buf=buf,debug=False)
 drawPipe.clearScene(bgcolor)
 
 #draw body
-drawPipe.drawCircle2D(vec2(20,14), 10, vec3(170,150,64))
-drawPipe.drawCircle2D(vec2(20,14), 9, vec3(255,255,0))
+drawPipe.drawSolidCircle2D(vec2(20,14), 10, vec3(170,150,64))
+drawPipe.drawSolidCircle2D(vec2(20,14), 9, vec3(255,255,0))
 #draw eyes
 drawPipe.drawLine2D(vec2(16,10),vec2(16,12), vec3(255,255,255))
 drawPipe.drawLine2D(vec2(17,10),vec2(17,12), vec3(0,0,0))

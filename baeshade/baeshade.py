@@ -216,7 +216,7 @@ class BaeBuffer:
     def isValid(self) -> bool:
         return self._bDirt == False
 
-    def fillAt(self,x,y,color):
+    def fillAt(self,x:int,y:int,color:BaeVec3d)->None:
         self._virtualBuffer[y][x] = color
         self._bDirt = True
 
@@ -349,7 +349,7 @@ class BaeTermDrawPipeline:
     def drawPixel(self,x:int,y:int,color:BaeVec3d):
         self._buff.fillAt(x,y,color)
 
-    def drawCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d):
+    def drawSolidCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d):
         c = self.__clampInBuffer(center)
         bw = self.backbufferWidth
         bh = self.backbufferHeight
@@ -391,7 +391,7 @@ class BaeTermDrawPipeline:
         ptX = sx
         ptY = sy
         for x in range(steps):
-            self.drawPixel(ptX,ptY,color)
+            self.drawPixel(int(ptX),int(ptY),color)
             ptX += incX
             ptY += incY
             

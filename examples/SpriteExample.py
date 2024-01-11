@@ -47,7 +47,7 @@ try:
         drawPipe.present(exlusiveMode=True)
         idx += 1
         delta = myTimer.last()
-        if  delta < DisplayRate:
+        if delta < DisplayRate:
             time.sleep(DisplayRate - delta)
         print('fps:%d, perf:%f ms' % (FPS,drawPipe.pipelinePerf),end="")
 except KeyboardInterrupt:

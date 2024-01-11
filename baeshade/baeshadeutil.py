@@ -44,8 +44,8 @@ class BaeshadeUtil:
     @staticmethod
     def quit():
         BaeshadeUtil.clearScreen()
-        BaeshadeUtil.showCursor(True)
         BaeshadeUtil.ScreenMode(False)
+        BaeshadeUtil.showCursor(True)
         BaeshadeUtil.resetCursorPos()
 
     class Stopwatch():

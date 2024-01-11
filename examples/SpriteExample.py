@@ -10,7 +10,8 @@ vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
 util = bs.BaeshadeUtil
 
-FPS = 18
+FPS = 10
+#rate in ms
 DisplayRate = 1.0 / FPS
 
 #read a pic
@@ -47,8 +48,14 @@ try:
         drawPipe.present(exlusiveMode=True)
         idx += 1
         delta = myTimer.last()
-        if delta < DisplayRate:
-            time.sleep(DisplayRate - delta)
+        waitTime = DisplayRate - delta * 0.001
+        if waitTime > 0.005:
+            time.sleep(waitTime - 0.002)
+        
+        while waitTime > 0:
+            time.sleep(0)
+            waitTime -= myTimer.last() * 0.001
+        
         print('fps:%d, perf:%f ms' % (FPS,drawPipe.pipelinePerf),end="")
 except KeyboardInterrupt:
     util.quit()

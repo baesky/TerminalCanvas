@@ -10,8 +10,8 @@ vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
 util = bs.BaeshadeUtil
 
-FPS = 10
-DisplayRate = 1.0 / FPS
+LimitFPS = 10
+DisplayRate = 1.0 / LimitFPS
 
 #read a pic
 path = os.path.join(os.getcwd(),"resource/sprite.png")
@@ -55,7 +55,7 @@ try:
             time.sleep(0)
             waitTime -= myTimer.last() * 0.001
         
-        print('fps:%d, perf:%f ms' % (FPS,drawPipe.pipelinePerf),end="")
+        print('fixed fps:%d, perf:%f ms' % (LimitFPS,drawPipe.pipelinePerf),end="")
 except KeyboardInterrupt:
     util.quit()
 

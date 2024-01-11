@@ -11,7 +11,6 @@ bgcolor = vec3(64,64,64)
 util = bs.BaeshadeUtil
 
 FPS = 10
-#rate in ms
 DisplayRate = 1.0 / FPS
 
 #read a pic

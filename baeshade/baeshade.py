@@ -290,6 +290,7 @@ class BaeTermDrawPipeline:
         self._ps = ps
         self._enableDebug = debug
         self._perf = 0
+        self._perfStrFlush = 0
         self._screenMode = False
         self._primList = []
 
@@ -323,6 +324,13 @@ class BaeTermDrawPipeline:
         whole pipeline excute time elapse in seconds
         """
         return self._perf
+
+    @property
+    def strPerf(self)->int:
+        """
+        character to flush in one frame
+        """
+        return self._perfStrFlush
 
     @property
     def debugable(self):
@@ -361,6 +369,7 @@ class BaeTermDrawPipeline:
     def __flush(self, buffstr):
         #print(buffstr,flush=False)
         BaeshadeUtil.output(buffstr)
+        self._perfStrFlush += len(buffstr)
 
     def __runFixedPipe(self):
         self.__runPixelShader()
@@ -384,6 +393,7 @@ class BaeTermDrawPipeline:
         """
         
         singleRunPerf = BaeshadeUtil.Stopwatch()
+        self._perfStrFlush = 0
         
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()

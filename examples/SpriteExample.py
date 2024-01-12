@@ -58,7 +58,7 @@ try:
         drawPipe.present(delta + waitTimeSec)
         
         
-        print('fixed fps:%d, perf:%.3f ms' % (LimitFPS,drawPipe.pipelinePerf*1000),end="")
+        print('fixed fps:%d, perf:%.3f ms, charNum:%d       ' % (LimitFPS,drawPipe.pipelinePerf*1000, drawPipe.strPerf),end="")
 except KeyboardInterrupt:
     drawPipe.useExclusiveScreen(False)
 

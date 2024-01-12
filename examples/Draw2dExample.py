@@ -6,7 +6,7 @@ vec2 = bs.BaeVec2d
 vec3 = bs.BaeVec3d
 bgcolor = vec3(128,128,128)
 # set a buffer
-buf = bs.BaeBuffer(42,14, mode=bs.BaeColorMode.Color24Bits)
+buf = bs.BaeBuffer(42,28, mode=bs.BaeColorMode.Color24Bits)
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(buf=buf,debug=False)
 

@@ -241,6 +241,7 @@ class BaeSprite():
         w: width of sprite
         h: height of sprite
         cnt: sequence of the sprite
+        fps: sprite playing speed
         mode: BaeColorMode
         """
         self._buff = []

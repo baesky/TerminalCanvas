@@ -17,7 +17,7 @@ s = pic.crop((0, 0, 192, 192)).resize((64,64))
 bmp = s.convert('RGB')
 
 # set a buffer
-buf = bs.BaeBuffer(bmp.width,round(bmp.height / 2), mode=bs.BaeColorMode.Color24Bits)
+buf = bs.BaeBuffer(bmp.width,bmp.height, mode=bs.BaeColorMode.Color24Bits)
 
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(buf=buf)

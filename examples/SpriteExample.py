@@ -9,6 +9,8 @@ vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
 util = bs.BaeshadeUtil
+sprite = bs.BaeSprite
+colrMode = bs.BaeColorMode
 
 LimitFPS = 10
 DisplayRate = 1.0 / LimitFPS
@@ -17,44 +19,46 @@ DisplayRate = 1.0 / LimitFPS
 path = os.path.join(os.getcwd(),"resource/sprite.png")
 pic = Image.open(path)
 bmp = pic.convert('RGB')
-seq = []
+
+goblin = sprite(64,64,7,10,colrMode.Color24Bits)
 
 #extract sprite
 for x in range(7):
     ptX = x * 192
     ptY = 0
     p = bmp.crop((ptX, ptY, ptX + 192, ptY + 192)).resize((64,64))
-    buf = bs.BaeBuffer(p.width,round(p.height/2), mode=bs.BaeColorMode.Color24Bits)
+    buf = bs.BaeBuffer(p.width,p.height, mode=colrMode.Color24Bits)
     for row in range(p.height):
         for col in range(p.width):
             r,g,b = p.getpixel((col,row))
-            buf.fillAt(col, row, vec3(r,g,b))
-    buf.genEncode()
-    seq.append(buf)
+            goblin.rawFillPixel(col,row,vec3(r,g,b),x)
+
 
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline(buf=seq[0])
-
-idx = 0
+drawPipe = bs.BaeTermDrawPipeline()
+drawPipe.addPrimtive(goblin)
 
 myTimer = util.Stopwatch()
 
 try:
     drawPipe.useExclusiveScreen(True)
     while True:
-        drawPipe.bindRenderTaret(seq[idx % seq.__len__()])
-        drawPipe.present()
-        idx += 1
+
         delta = myTimer.last()
-        waitTime = DisplayRate - delta * 0.001
-        if waitTime > 0.005:
-            time.sleep(waitTime - 0.002)
+
+        waitTimeSec = max(0.0,DisplayRate - delta)
+        delayTime = waitTimeSec
+        if delayTime > 0.005:
+            time.sleep(delayTime - 0.002)
         
-        while waitTime > 0:
+        while delayTime > 0:
             time.sleep(0)
-            waitTime -= myTimer.last() * 0.001
+            delayTime -= myTimer.last()
+
+        drawPipe.present(delta + waitTimeSec)
         
-        print('fixed fps:%d, perf:%.3f ms' % (LimitFPS,drawPipe.pipelinePerf),end="")
+        
+        print('fixed fps:%d, perf:%.3f ms' % (LimitFPS,drawPipe.pipelinePerf*1000),end="")
 except KeyboardInterrupt:
     drawPipe.useExclusiveScreen(False)
 

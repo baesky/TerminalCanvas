@@ -170,17 +170,17 @@ class BaeBuffer:
     virtual buffer for drawing
     """
     
-    def __init__(self,w,h,mode:BaeColorMode=BaeColorMode.Color8Bits):
+    def __init__(self,w:int,h:int,mode:BaeColorMode=BaeColorMode.Color8Bits):
         """
         w:terminal canvas width
         h:terminal canvas height
         """
         # row and colume in terminal
-        self._termSize = BaeVec2d(w,h)
+        self._termSize = BaeVec2d(w,round(h/2))
         # virtual buffer size
-        self._vSize = BaeVec2d(w,h * 2)
+        self._vSize = BaeVec2d(w,h)
         self._colormode = mode
-        self._virtualBuffer = [ [0 for x in range(w)] for y in range(h*2)]
+        self._virtualBuffer = [ [0 for x in range(w)] for y in range(h)]
         self._cache = None
         self._bDirt = False
 
@@ -220,18 +220,65 @@ class BaeBuffer:
         self._virtualBuffer[y][x] = color
         self._bDirt = True
 
-    def genEncode(self):
+    def __genEncode(self):
         self._cache = BaeTermDraw.encodeBuffer(self)
         self._bDirt = False
         return self._cache
     
+    def getEncodeBuffer(self)->str:
+        if self.isValid is False:
+            self.__genEncode()
+        
+        return self.cache
+
     @property
     def cache(self):
         return self._cache
 
+class BaeSprite():
+    def __init__(self,w:int,h:int,cnt:int = 1,fps:int=10,mode:BaeColorMode=BaeColorMode.Color8Bits):
+        """
+        w: width of sprite
+        h: height of sprite
+        cnt: sequence of the sprite
+        mode: BaeColorMode
+        """
+        self._buff = []
+        self._seqLen = cnt
+        self._playIndex = 0
+        self._fps = fps
+        for i in range(cnt):
+            self._buff.append(BaeBuffer(w,h,mode))
+
+    def rawFillPixel(self,x:int,y:int,color:BaeVec3d,seq:int)->None:
+        self._buff[seq].fillAt(x, y, color)
+
+    def seq(self,idx:int)->BaeBuffer:
+        i = BaeMathUtil.clamp(idx, 0, self.seqNum - 1)
+        return self._buff[i]
+
+    @property
+    def playIndex(self):
+        return round(self._playIndex % self.seqNum)
+
+    def playAtRate(self, delta:float) -> BaeBuffer:
+        self._playIndex = (self._playIndex + delta * self.fps) % self.seqNum
+        return self.seq(round(self.playIndex))
+
+    def resetFrame(self):
+        self._playIndex = 0
+
+    @property
+    def fps(self):
+        return self._fps
+
+    @property
+    def seqNum(self):
+        return self._seqLen
+
 class BaeTermDrawPipeline:
     def __init__(self, 
-                 buf:BaeBuffer, 
+                 buf:BaeBuffer = None, 
                  ps: Optional[Callable[[int,int, BaeBuffer],BaeVec3d]] = None,
                  debug = False):
         """
@@ -243,6 +290,7 @@ class BaeTermDrawPipeline:
         self._enableDebug = debug
         self._perf = 0
         self._screenMode = False
+        self._primList = []
 
     @property
     def isExclusiveMode(self):
@@ -316,13 +364,22 @@ class BaeTermDrawPipeline:
     def __runFixedPipe(self):
         self.__runPixelShader()
 
+    def addPrimtive(self, prim):
+        self._primList.append(prim)
 
-    def present(self):
+    @property
+    def Primitives(self):
+        return len(self._primList)
+
+    def drawPrimitive(self, delta:float):
+        for p in self._primList:
+            if isinstance(p,BaeSprite):
+                self.bindRenderTaret(p.playAtRate(delta))
+
+    def present(self, delta=0.0):
         """
         output backbuffer to terminal
-        exlusiveMode: bool, 
-                      True: content will try to display at top-left of the term
-                      False: content will display after command line 
+        delta: in second
         """
         
         singleRunPerf = BaeshadeUtil.Stopwatch()
@@ -331,6 +388,7 @@ class BaeTermDrawPipeline:
             BaeshadeUtil.resetCursorPos()
 
         self.__runPixelShader()
+        self.drawPrimitive(delta)
 
         # todo: refactor debug workflow
         if self.debugable == True:
@@ -345,8 +403,7 @@ class BaeTermDrawPipeline:
                     self.__flush(pixelPair + nl)
         else:
             if self._buff.isValid is False:
-                tempBuffer = BaeTermDraw.encodeBuffer(self._buff)
-                self.__flush(tempBuffer)            
+                self.__flush(self._buff.getEncodeBuffer())            
             else:
                 self.__flush(self._buff._cache)
 

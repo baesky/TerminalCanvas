@@ -251,7 +251,7 @@ class BaeSprite():
         for i in range(cnt):
             self._buff.append(BaeBuffer(w,h,mode))
 
-    def rawFillPixel(self,x:int,y:int,color:BaeVec3d,seq:int)->None:
+    def rawFillPixel(self,x:int,y:int,color:BaeVec3d,seq:int=0)->None:
         self._buff[seq].fillAt(x, y, color)
 
     def seq(self,idx:int)->BaeBuffer:

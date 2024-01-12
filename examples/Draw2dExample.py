@@ -4,6 +4,7 @@ import baeshade as bs
 
 vec2 = bs.BaeVec2d
 vec3 = bs.BaeVec3d
+sprite = bs.BaeSprite
 bgcolor = vec3(128,128,128)
 # set a buffer
 buf = bs.BaeBuffer(42,28, mode=bs.BaeColorMode.Color24Bits)

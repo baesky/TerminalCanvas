@@ -259,11 +259,11 @@ class BaeSprite():
 
     @property
     def playIndex(self):
-        return round(self._playIndex % self.seqNum)
+        return round(self._playIndex)
 
     def playAtRate(self, delta:float) -> BaeBuffer:
         self._playIndex = (self._playIndex + delta * self.fps) % self.seqNum
-        return self.seq(round(self.playIndex))
+        return self.seq(self.playIndex)
 
     def resetFrame(self):
         self._playIndex = 0

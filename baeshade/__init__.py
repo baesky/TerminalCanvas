@@ -4,6 +4,7 @@ from .baeshade import BaeColorMode
 from .baeshade import BaeSprite
 from .baeshademath import BaeVec3d
 from .baeshademath import BaeVec2d
+from .baeshademath import BaeBoundingBox2D
 from .baeshademath import BaeRay
 from .baeshademath import BaeMathUtil
 from .baeshadeutil import BaeshadeUtil

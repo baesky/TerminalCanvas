@@ -6,7 +6,7 @@ import os
 
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
-bgcolor = vec3(64,64,64)
+bgcolor = vec3(64.0,64.0,64.0)
 colrMode = bs.BaeColorMode
 sprite = bs.BaeSprite
 
@@ -20,14 +20,8 @@ bmp = s.convert('RGB')
 
 goblin = sprite(64,64,1,0,colrMode.Color24Bits)
 
-# set a buffer
-buf = bs.BaeBuffer(bmp.width,bmp.height, mode=bs.BaeColorMode.Color24Bits)
-
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline(buf=buf)
-
-#clear canvas
-drawPipe.clearScene(bgcolor)
+drawPipe = bs.BaeTermDrawPipeline()
 
 #draw pixels
 for y in range(bmp.height):
@@ -44,4 +38,5 @@ drawPipe.addPrimtive(goblin)
 # run one frame
 drawPipe.present()
 
+print('area: %f'% (goblin._bb.area / (64*64)))
 

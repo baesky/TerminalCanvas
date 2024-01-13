@@ -1,9 +1,10 @@
 import math
         
 class BaeVec2d:
-    def __init__(self, x=0,y=0):
+    def __init__(self, x=0,y=0,eps=0.000001):
         self._x = x
         self._y = y
+        self._eps = eps
 
     @property
     def X(self):
@@ -46,13 +47,19 @@ class BaeVec2d:
         else:
             return BaeVec2d(self.X / f.X, self.Y /f.Y)
 
+    def __eq__(self, o):
+        return abs(self.X - o.X) < self._esp and abs(self.Y - o.Y) < self._esp
+    
+    def __ne__(self, o):
+        return not(self == o)
+
     @staticmethod
     def Dot(lh , rh):
         return lh.X * rh.X + lh.Y * rh.Y
 
 class BaeVec3d(BaeVec2d):
-    def __init__(self, x=0,y=0,z=0):
-        super().__init__(x,y)
+    def __init__(self, x=0,y=0,z=0,esp=0.000001):
+        super().__init__(x,y,esp)
         self._z = z
 
     @property
@@ -97,6 +104,14 @@ class BaeVec3d(BaeVec2d):
     def __truediv__(self, f):
         return BaeVec3d(self.X / f, self.Y /f, self.Z / f)
 
+    def __eq__(self, o):
+        return abs(self.X - o.X) < self._eps and \
+                abs(self.Y - o.Y) < self._eps and \
+                abs(self.Z - o.Z) < self._eps
+    
+    def __ne__(self, o):
+        return not(self == o)
+
     @staticmethod
     def Dot(lh , rh):
         return lh.X * rh.X + lh.Y * rh.Y + lh.Z * rh.Z
@@ -122,4 +137,26 @@ class BaeMathUtil:
         clamp value v at: b <= v <= t
         """
         return max(b, min(v,t))
+    
+class BaeBoundingBox2D:
+    def __init__(self):
+        self._min = BaeVec2d(9999,9999)
+        self._max = BaeVec2d(-9999,-9999)
+
+    def addPoint(self,x,y):
+        
+        if x < self._min.X:
+            self._min.SetX(x)
+        elif x > self._max.X:
+            self._max.SetX(x)
+
+        if y < self._min.Y:
+            self._min.SetY(y)
+        elif y > self._max.Y:
+            self._max.SetY(y)
+
+    @property
+    def area(self):
+        return (self._max.X - self._min.X) * (self._max.Y - self._min.Y)
+
     

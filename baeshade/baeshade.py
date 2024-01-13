@@ -5,6 +5,7 @@ from .baeshademath import BaeVec2d
 from .baeshademath import BaeVec3d
 from .baeshademath import BaeMathUtil
 from .baeshadeutil import BaeshadeUtil
+from .baeshademath import BaeBoundingBox2D
 from typing import Optional, Callable
 from enum import Enum
 
@@ -236,7 +237,11 @@ class BaeBuffer:
         return self._cache
 
 class BaeSprite():
-    def __init__(self,w:int,h:int,cnt:int = 1,fps:int=10,mode:BaeColorMode=BaeColorMode.Color8Bits):
+    def __init__(self,w:int,h:int,
+                 cnt:int = 1,
+                 fps:int=10,
+                 mode:BaeColorMode=BaeColorMode.Color8Bits,
+                 bgColr:BaeVec3d = BaeVec3d(0,0,0)):
         """
         w: width of sprite
         h: height of sprite
@@ -246,13 +251,21 @@ class BaeSprite():
         """
         self._buff = []
         self._seqLen = cnt
+        self._bgColor = bgColr
         self._playIndex = 0
         self._fps = fps
+        self._bb = BaeBoundingBox2D()
         for i in range(cnt):
             self._buff.append(BaeBuffer(w,h,mode))
 
+    @property
+    def bgColor(self):
+        return self._bgColor
+
     def rawFillPixel(self,x:int,y:int,color:BaeVec3d,seq:int=0)->None:
         self._buff[seq].fillAt(x, y, color)
+        if color != self.bgColor:
+            self._bb.addPoint(x,y)
 
     def seq(self,idx:int)->BaeBuffer:
         i = BaeMathUtil.clamp(idx, 0, self.seqNum - 1)

@@ -235,6 +235,17 @@ class BaeBuffer:
     @property
     def cache(self):
         return self._cache
+    
+    def compute(self,kernel:Optional[Callable[[int,int, 'BaeBuffer'],BaeVec3d]]):
+        if kernel == None:
+            return
+
+        bw = self.virtualSize.X
+        bh = self.virtualSize.Y
+
+        for row in range(bh):
+            for col in range(bw):
+                self.fillAt(col,row, kernel(col,row, BaeVec2d(bw,bh)))
 
 class BaeSprite():
     def __init__(self,w:int,h:int,
@@ -293,14 +304,11 @@ class BaeSprite():
 class BaeTermDrawPipeline:
     def __init__(self, 
                  buf:BaeBuffer = None, 
-                 ps: Optional[Callable[[int,int, BaeBuffer],BaeVec3d]] = None,
                  debug = False):
         """
         buf: render target
-        ps: pixel shader
         """
         self._buff = buf
-        self._ps = ps
         self._enableDebug = debug
         self._perf = 0
         self._perfStrFlush = 0
@@ -310,10 +318,6 @@ class BaeTermDrawPipeline:
     @property
     def isExclusiveMode(self):
         return self._screenMode
-
-    @property
-    def pixelShader(self):
-        return self._ps
 
     @property
     def backbuffer(self):
@@ -367,25 +371,10 @@ class BaeTermDrawPipeline:
         """
         self._buff = buf
 
-    def __runPixelShader(self):
-
-        if self.pixelShader == None:
-            return
-
-        bw = self.backbufferWidth
-        bh = self.backbufferHeight
-
-        for row in range(bh):
-            for col in range(bw):
-                self.drawPixel(col,row, self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight)))
-
     def __flush(self, buffstr):
         #print(buffstr,flush=False)
         BaeshadeUtil.output(buffstr)
         self._perfStrFlush += len(buffstr)
-
-    def __runFixedPipe(self):
-        self.__runPixelShader()
 
     def addPrimtive(self, prim):
         self._primList.append(prim)
@@ -411,7 +400,6 @@ class BaeTermDrawPipeline:
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
 
-        self.__runPixelShader()
         self.drawPrimitive(delta)
 
         # todo: refactor debug workflow

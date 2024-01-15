@@ -33,9 +33,11 @@ for x in range(7):
             r,g,b = p.getpixel((col,row))
             goblin.rawFillPixel(col,row,vec3(r,g,b),x)
 
+# Create a RT to draw
+RT = bs.BaeBuffer(64,64,colrMode.Color24Bits)
 
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline()
+drawPipe = bs.BaeTermDrawPipeline(RT)
 drawPipe.addPrimtive(goblin)
 
 myTimer = util.Stopwatch()

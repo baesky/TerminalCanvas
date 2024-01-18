@@ -186,6 +186,7 @@ class BaeBuffer:
         self._virtualBuffer = [ [BaeVec3d() for x in range(w)] for y in range(h)]
         self._cache = None
         self._bDirt = False
+        self._dirtRows = None
 
     def getVirtualBuffer(self):
         return self._virtualBuffer
@@ -243,7 +244,29 @@ class BaeBuffer:
     @property
     def cache(self):
         return self._cache
-    
+
+    def getEffectivePixels(self, invalidColor:BaeVec3d):
+        if self._dirtRows != None:
+            return self._dirtRows
+        else:
+            return self.__trim(invalidColor)
+
+    def __trim(self, invalidColor:BaeVec3d):
+        """
+        return a list of set, each row consist a set of id which represents a dirt pixel x pos
+        """
+
+        self._dirtRows = [set() for _ in range(self.virtualSize.Y)]
+
+        for y in range(self.virtualSize.Y):
+            for x in range(self.virtualSize.X):
+                colr = self.getPixel(x,y)
+                if colr != invalidColor :
+                    #dirt rt, must update 2 vertical subpixel once
+                    self._dirtRows[y].add(x)
+
+        return self._dirtRows
+
     def compute(self,kernel:Optional[Callable[[int,int, 'BaeBuffer'],BaeVec3d]]):
         """
         Run per pixel
@@ -271,14 +294,12 @@ class BaeSprite():
         fps: sprite playing speed
         mode: BaeColorMode
         """
-        self._buff = []
+        self._buff = [BaeBuffer(w,h,mode)]*cnt
         self._seqLen = cnt
         self._bgColor = bgColr
         self._playIndex = 0
         self._fps = fps
         self._bb = BaeBoundingBox2D()
-        for i in range(cnt):
-            self._buff.append(BaeBuffer(w,h,mode))
 
     @property
     def bgColor(self):
@@ -296,6 +317,9 @@ class BaeSprite():
     @property
     def playIndex(self):
         return round(self._playIndex)
+
+    def getEffectiveRow(self):
+        return self._buff[self.playIndex].getEffectivePixels(self.bgColor)
 
     def playAtRate(self, delta:float) -> BaeBuffer:
         self._playIndex = (self._playIndex + delta * self.fps) % self.seqNum
@@ -325,6 +349,7 @@ class BaeTermDrawPipeline:
         self._enableDebug = debug
         self._perf = 0
         self._perfStrFlush = 0
+        self.perfX = 0
         self._screenMode = False
         self._primList = []
 
@@ -451,39 +476,38 @@ class BaeTermDrawPipeline:
     def drawPrimitive(self, delta:float):
         renderTarget = self._buff
         rows = renderTarget.virtualSize.Y
-        dirt_row = [[] for _ in range(rows)]
+        rtDirtRow = [set() for _ in range(rows)]
+        rtCombRow = [list() for _ in range(rows)]
 
         for p in self._primList:
             if isinstance(p,BaeSprite):
                 bmp = p.playAtRate(delta)
-                for y in range(bmp.virtualSize.Y):
-                    for x in range(bmp.virtualSize.X):
-                        colr = bmp.getPixel(x,y)
-                        if colr != p.bgColor :
-                            #dirt rt
-                            dirt_row[y].append(x)
-                            self._historyMap.touch(x,y)
-                            renderTarget.fillAt(x,y, colr)
-        
+
+                effRow = p.getEffectiveRow()
+                
+                for idx, rowSets in enumerate(effRow):
+                    rtDirtRow[idx] |= rowSets
+                    for xPos in rowSets:
+                        color = bmp.getPixel(xPos, idx)
+                        renderTarget.fillAt(xPos,idx, color)
+                
         encode_buff = []
 
+        xxx = BaeshadeUtil.Stopwatch()
         # gater dirt bits group
-        for idx in range(0,rows,2):
-            if dirt_row[idx] == [] and dirt_row[idx+1] == []:
+        for idx in range(rows):
+            if len(rtDirtRow[idx]) == 0:
                 continue
-            combineRow = dirt_row[idx] + dirt_row[idx+1]
-            combineRow = list(set(combineRow))
 
-            dirt_row[idx].clear()
-
-            for k, g in groupby(enumerate(combineRow), lambda x:x[0]-x[1]):
+            for k, g in groupby(enumerate(rtDirtRow[idx]), lambda x:x[0]-x[1]):
                 grp = (map(itemgetter(1),g))
                 grp = list(map(int,grp))
-                dirt_row[idx].append((grp[0],grp[-1]-grp[0]+1))
+                rtCombRow[idx].append((grp[0],grp[-1]-grp[0]+1))
 
-            for s,c in dirt_row[idx]:
+            for s,c in rtCombRow[idx]:
                 encode_buff.append(self.__encodeDirtPixels(s,idx,c,renderTarget))
 
+        self.perfX = xxx.stop()
         
         self.__flush(''.join(encode_buff))
         
@@ -640,3 +664,4 @@ class BaeTermDraw:
                 encodeBuff.append(subPixels + nl)
 
         return ''.join(encodeBuff)
+    

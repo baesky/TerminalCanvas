@@ -8,6 +8,8 @@ from .baeshadeutil import BaeshadeUtil
 from .baeshademath import BaeBoundingBox2D
 from typing import Optional, Callable
 from enum import Enum
+from operator import itemgetter
+from itertools import groupby
 
 
 BAECODEX = BaeshadeUtil.EncodeTable
@@ -181,7 +183,7 @@ class BaeBuffer:
         # virtual buffer size
         self._vSize = BaeVec2d(w,h)
         self._colormode = mode
-        self._virtualBuffer = [ [0 for x in range(w)] for y in range(h)]
+        self._virtualBuffer = [ [BaeVec3d() for x in range(w)] for y in range(h)]
         self._cache = None
         self._bDirt = False
 
@@ -261,7 +263,7 @@ class BaeSprite():
                  cnt:int = 1,
                  fps:int=10,
                  mode:BaeColorMode=BaeColorMode.Color8Bits,
-                 bgColr:BaeVec3d = BaeVec3d(0,0,0)):
+                 bgColr:BaeVec3d = BaeVec3d(0.0,0.0,0.0)):
         """
         w: width of sprite
         h: height of sprite
@@ -443,9 +445,13 @@ class BaeTermDrawPipeline:
         self._historyMap = self._prevDirtMap.reset()
         self._prevDirtMap = temp
 
+    def __encodeDirtPixels(self,x:int,y:int, cnt:int,buff:BaeBuffer):
+        return BaeTermDraw.encodeBatchLine(y,x,cnt,buff)
 
     def drawPrimitive(self, delta:float):
         renderTarget = self._buff
+        rows = renderTarget.virtualSize.Y
+        dirt_row = [[] for _ in range(rows)]
 
         for p in self._primList:
             if isinstance(p,BaeSprite):
@@ -455,13 +461,31 @@ class BaeTermDrawPipeline:
                         colr = bmp.getPixel(x,y)
                         if colr != p.bgColor :
                             #dirt rt
+                            dirt_row[y].append(x)
                             self._historyMap.touch(x,y)
                             renderTarget.fillAt(x,y, colr)
-                            
-        # gater dirt bits group
-        self._historyMap._dirtMap.sort()
-        print('')
+        
+        encode_buff = []
 
+        # gater dirt bits group
+        for idx in range(0,rows,2):
+            if dirt_row[idx] == [] and dirt_row[idx+1] == []:
+                continue
+            combineRow = dirt_row[idx] + dirt_row[idx+1]
+            combineRow = list(set(combineRow))
+
+            dirt_row[idx].clear()
+
+            for k, g in groupby(enumerate(combineRow), lambda x:x[0]-x[1]):
+                grp = (map(itemgetter(1),g))
+                grp = list(map(int,grp))
+                dirt_row[idx].append((grp[0],grp[-1]-grp[0]+1))
+
+            for s,c in dirt_row[idx]:
+                encode_buff.append(self.__encodeDirtPixels(s,idx,c,renderTarget))
+
+        
+        self.__flush(''.join(encode_buff))
         
 
 
@@ -478,11 +502,6 @@ class BaeTermDrawPipeline:
             BaeshadeUtil.resetCursorPos()
 
         self.drawPrimitive(delta)
-       
-        if self._buff.isValid is False:
-            self.__flush(self._buff.getEncodeBuffer())            
-        else:
-            self.__flush(self._buff._cache)
 
         self.resetDirtMap()
 
@@ -585,6 +604,21 @@ class BaeTermDraw:
                 assert True, "Not supported Color mode"
                 return ''
 
+    @staticmethod
+    def encodeBatchLine(row:int,x:int,cnt:int,buff:BaeBuffer):
+        
+        startMark = '\x1b[%d;%dH'%(row/2,x)
+        w = buff.virtualSize.X
+        h = buff.virtualSize.Y
+        encodeBuff=[startMark]
+
+        for c in range(cnt):
+            tColr = buff.getPixel(x+c,row)
+            bColr = buff.getPixel(x+c,row+1)
+            subPixels = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =buff.colorMode)
+            encodeBuff.append(subPixels)
+        
+        return ''.join(encodeBuff)
 
     @staticmethod
     def encodeBuffer(buff:BaeBuffer):

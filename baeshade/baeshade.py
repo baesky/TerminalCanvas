@@ -605,9 +605,9 @@ class BaeTermDraw:
         tc = BaeTermDraw.quantify(topColr)
         bc = BaeTermDraw.quantify(botColr)
 
-        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b+10) + '\x1b[0m'
-        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) + '\x1b[0m'
-        encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
+        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b+10) #+ '\x1b[0m'
+        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) #+ '\x1b[0m'
+        encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) #+ '\x1b[0m'
 
         match mode:
             case BaeColorMode.Color4Bits:

@@ -185,6 +185,7 @@ class BaeBuffer:
         self._colormode = mode
         self._virtualBuffer = [ [BaeVec3d() for x in range(w)] for y in range(h)]
         self._cache = None
+        self._cacheEx = None
         self._bDirt = False
         self._dirtRows = None
         self._effectiveRows = None
@@ -230,14 +231,8 @@ class BaeBuffer:
 
     def __genEncode(self):
         """
-        Encode colors to ANSI strings list
+        Encode colors to ANSI strings
         """
-       # self._cache = [list() for _ in range(self.virtualSize.Y)]
-       # for idx, rowSets in enumerate(self._effectiveRows):
-       #     for xpos,lenth in rowSets:
-       #         self._cache[idx] = 
-
-
         self._cache = BaeTermDraw.encodeBuffer(self)
         self._bDirt = False
         return self._cache
@@ -247,6 +242,20 @@ class BaeBuffer:
             self.__genEncode()
         
         return self.cache
+    
+    def genEffectiveEncodeBuffer(self):
+        self._cacheEx = [tuple() for _ in range(self.pyhicalSize.Y)]
+        for idx, rowSets in enumerate(self._effectiveRows):
+            for xpos,lenth in rowSets:
+                self._cacheEx[idx]=(xpos,BaeTermDraw.encodeBatchLine(idx*2,xpos,lenth,self))
+
+        return self._cacheEx
+
+    def getEncodeBufferEx(self):
+        if self._cacheEx is None:
+            return self.genEffectiveEncodeBuffer()
+        else:
+            return self._cacheEx
 
     @property
     def cache(self):
@@ -442,8 +451,8 @@ class BaeTermDrawPipeline:
     def PrimitivesNum(self):
         return len(self._primList)
 
-    def __encodeDirtPixelsLine(self,x:int,y:int, cnt:int,buff:BaeBuffer,lx:int=0,ly:int=0):
-        return BaeTermDraw.encodeBatchLine(y,x,cnt,buff,lx,ly)
+    def __encodeDirtPixelsLine(self,x:int,y:int, buffstr:str,lx:int=0,ly:int=0):
+        return '\x1b[%d;%dH%s'%((ly+y)//2,lx+x,buffstr)
 
     def drawPrimitiveOnBg(self, delta:float):
         #_buff as Backgournd, not need update
@@ -458,24 +467,24 @@ class BaeTermDrawPipeline:
                 
                 #get corresponding frame
                 bmp = p.playAtRate(delta)
+                p.getEffectiveRow()
                 #generate encode, don't need write to bg
                 pos = p.getPos
                 encode_buff = []
-                effRow = p.getEffectiveRow()
+
+                exRow = bmp.getEncodeBufferEx()
 
                 sortDirtPixelTime = BaeshadeUtil.Stopwatch()
 
-                for idx, rowSets in enumerate(effRow):
-                    for xpos,lenth in rowSets:
-                        encode_buff.append(self.__encodeDirtPixelsLine(xpos,idx*2,lenth,bmp,pos.X,pos.Y))
+                for offsetY, enc in enumerate(exRow):
+                    if not enc:
+                        continue
+                    x, s = enc
+                    encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
                 
                 self.perfX = sortDirtPixelTime.stop()
 
                 self.__flush(''.join(encode_buff))
-
-       
-        
-        
 
 
     def drawPrimitive(self, delta:float):
@@ -633,12 +642,13 @@ class BaeTermDraw:
                 return ''
 
     @staticmethod
-    def encodeBatchLine(row:int,start:int,lenth:int,buff:BaeBuffer,lx:int = 0,ly:int=0):
+    def encodeBatchLine(row:int,start:int,lenth:int,buff:BaeBuffer):
         
-        w = buff.virtualSize.X
-        h = buff.virtualSize.Y
-        
-        encodeBuff=['\x1b[%d;%dH'%((ly+row)//2,lx+start)]
+        #w = buff.virtualSize.X
+        #h = buff.virtualSize.Y
+        #encodeBuff=['\x1b[%d;%dH'%((ly+row)//2,lx+start)]
+
+        encodeBuff=[]
 
         for c in range(lenth):
             tColr = buff.getPixel(start+c,row)

@@ -260,6 +260,7 @@ class BaeBuffer:
     def __trim(self, invalidColor:BaeVec3d):
         """
         return a list of tuple(start,length), start: dirt pixel x pos, length 
+        rows in list are combined by 2 virtual row
         """
 
         self._dirtRows = [set() for _ in range(self.pyhicalSize.Y)]
@@ -450,8 +451,6 @@ class BaeTermDrawPipeline:
         rtH = renderTarget.virtualSize.Y
         rtW = renderTarget.virtualSize.X
 
-        sortDirtPixelTime = BaeshadeUtil.Stopwatch()
-
         # draw dynamic primitives, not need really write to backbuffer
         for p in self._primList:
             #now only support sprite
@@ -464,13 +463,17 @@ class BaeTermDrawPipeline:
                 encode_buff = []
                 effRow = p.getEffectiveRow()
 
+                sortDirtPixelTime = BaeshadeUtil.Stopwatch()
+
                 for idx, rowSets in enumerate(effRow):
                     for xpos,lenth in rowSets:
                         encode_buff.append(self.__encodeDirtPixelsLine(xpos,idx*2,lenth,bmp,pos.X,pos.Y))
                 
+                self.perfX = sortDirtPixelTime.stop()
+
                 self.__flush(''.join(encode_buff))
 
-        self.perfX = sortDirtPixelTime.stop()
+       
         
         
 

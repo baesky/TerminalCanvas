@@ -23,15 +23,15 @@ bmp = pic.convert('RGB')
 goblin = sprite(64,64,7,10,colrMode.Color24Bits)
 
 #extract sprite
-for x in range(7):
-    ptX = x * 192
+for frame in range(7):
+    ptX = frame * 192
     ptY = 0
     p = bmp.crop((ptX, ptY, ptX + 192, ptY + 192)).resize((64,64))
-    buf = bs.BaeBuffer(p.width,p.height, mode=colrMode.Color24Bits)
+
     for row in range(p.height):
         for col in range(p.width):
             r,g,b = p.getpixel((col,row))
-            goblin.rawFillPixel(col,row,vec3(r,g,b),x)
+            goblin.rawFillPixel(col,row,vec3(r,g,b),frame)
 
 # Create a RT to draw
 RT = bs.BaeBuffer(64,64,colrMode.Color24Bits)

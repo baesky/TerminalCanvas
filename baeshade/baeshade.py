@@ -179,7 +179,7 @@ class BaeBuffer:
         h:terminal canvas height
         """
         # row and colume in terminal
-        self._termSize = BaeVec2d(w,round(h/2))
+        self._termSize = BaeVec2d(w,BaeMathUtil.round(h/2))
         # virtual buffer size
         self._vSize = BaeVec2d(w,h)
         self._colormode = mode
@@ -300,7 +300,7 @@ class BaeSprite():
         fps: sprite playing speed
         mode: BaeColorMode
         """
-        self._buff = [BaeBuffer(w,h,mode)]*cnt
+        self._buff = [BaeBuffer(w,h,mode) for i in range(cnt)]
         self._seqLen = cnt
         self._bgColor = bgColr
         self._playIndex = 0
@@ -330,15 +330,15 @@ class BaeSprite():
         return self._buff[i]
 
     @property
-    def playIndex(self):
-        return self._playIndex
+    def playIndex(self)->int:
+        return BaeMathUtil.round(self._playIndex)
 
     def getEffectiveRow(self):
         return self.seq(self.playIndex).getEffectivePixels(self.bgColor)
 
     def playAtRate(self, delta:float) -> BaeBuffer:
-        self._playIndex = round((self._playIndex + delta * self.fps) % self.seqNum)
-        return self.seq(self._playIndex)
+        self._playIndex = (self._playIndex + delta * self.fps) % self.seqNum
+        return self.seq(self.playIndex)
 
     def resetFrame(self):
         self._playIndex = 0
@@ -532,7 +532,7 @@ class BaeTermDrawPipeline:
                 self.drawPixel(col,row, clrColor)
 
     def __clampInBuffer(self,pt:BaeVec2d):
-        return BaeVec2d(round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
+        return BaeVec2d(BaeMathUtil.round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), BaeMathUtil.round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
     def drawPixel(self,x:int,y:int,color:BaeVec3d):
         self._buff.fillAt(x,y,color)
@@ -558,11 +558,11 @@ class BaeTermDrawPipeline:
         
         #clamp to safe zone
 
-        sx = round(BaeMathUtil.clamp(start.X, 0, self.backbufferWidth))
-        sy = round(BaeMathUtil.clamp(start.Y, 0, self.backbufferHeight))
+        sx = BaeMathUtil.round(BaeMathUtil.clamp(start.X, 0, self.backbufferWidth))
+        sy = BaeMathUtil.round(BaeMathUtil.clamp(start.Y, 0, self.backbufferHeight))
 
-        ex = round(BaeMathUtil.clamp(end.X, 0, self.backbufferWidth))
-        ey = round(BaeMathUtil.clamp(end.Y, 0, self.backbufferHeight))
+        ex = BaeMathUtil.round(BaeMathUtil.clamp(end.X, 0, self.backbufferWidth))
+        ey = BaeMathUtil.round(BaeMathUtil.clamp(end.Y, 0, self.backbufferHeight))
 
         # simple DDA
         dx = ex - sx
@@ -595,7 +595,7 @@ class BaeTermDraw:
         r = max(0, min(255,rgb.X))
         g = max(0, min(255,rgb.Y))
         b = max(0, min(255,rgb.Z))
-        return BaeVec3d(round(r),round(g),round(b))
+        return BaeVec3d(BaeMathUtil.round(r),BaeMathUtil.round(g),BaeMathUtil.round(b))
 
     @staticmethod
     def encodePixel(topColr,botColr,mode):

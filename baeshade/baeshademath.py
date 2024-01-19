@@ -131,6 +131,8 @@ class BaeRay:
     
 class BaeMathUtil:
 
+    __p = float(10**5)
+
     @staticmethod
     def clamp(v,b,t):
         """
@@ -138,6 +140,10 @@ class BaeMathUtil:
         """
         return max(b, min(v,t))
     
+    @staticmethod
+    def round(v:float)->int:
+        return int(v)
+
 class BaeBoundingBox2D:
     def __init__(self):
         self._min = BaeVec2d(9999,9999)

@@ -230,8 +230,14 @@ class BaeBuffer:
 
     def __genEncode(self):
         """
-        Encode colors to ANSI strings
+        Encode colors to ANSI strings list
         """
+       # self._cache = [list() for _ in range(self.virtualSize.Y)]
+       # for idx, rowSets in enumerate(self._effectiveRows):
+       #     for xpos,lenth in rowSets:
+       #         self._cache[idx] = 
+
+
         self._cache = BaeTermDraw.encodeBuffer(self)
         self._bDirt = False
         return self._cache
@@ -249,19 +255,21 @@ class BaeBuffer:
     def getEffectivePixels(self, invalidColor:BaeVec3d):
         return self._effectiveRows if self._effectiveRows != None else self.__trim(invalidColor)
 
+    
+
     def __trim(self, invalidColor:BaeVec3d):
         """
         return a list of tuple(start,length), start: dirt pixel x pos, length 
         """
 
-        self._dirtRows = [set() for _ in range(self.virtualSize.Y)]
-        self._effectiveRows = [list() for _ in range(self.virtualSize.Y)]
+        self._dirtRows = [set() for _ in range(self.pyhicalSize.Y)]
+        self._effectiveRows = [list() for _ in range(self.pyhicalSize.Y)]
         for y in range(self.virtualSize.Y):
             for x in range(self.virtualSize.X):
                 colr = self.getPixel(x,y)
                 if colr != invalidColor :
                     #dirt rt, must update 2 vertical subpixel once
-                    self._dirtRows[y].add(x)
+                    self._dirtRows[y//2].add(x)
 
         for idx,row in enumerate(self._dirtRows):
             if len(row) == 0:
@@ -342,6 +350,7 @@ class BaeSprite():
 
     def resetFrame(self):
         self._playIndex = 0
+
 
     @property
     def fps(self):
@@ -457,7 +466,7 @@ class BaeTermDrawPipeline:
 
                 for idx, rowSets in enumerate(effRow):
                     for xpos,lenth in rowSets:
-                        encode_buff.append(self.__encodeDirtPixelsLine(xpos,idx,lenth,bmp,pos.X,pos.Y))
+                        encode_buff.append(self.__encodeDirtPixelsLine(xpos,idx*2,lenth,bmp,pos.X,pos.Y))
                 
                 self.__flush(''.join(encode_buff))
 

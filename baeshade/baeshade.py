@@ -244,7 +244,7 @@ class BaeBuffer:
         return self.cache
     
     def genEffectiveEncodeBuffer(self):
-        self._cacheEx = [list() for _ in range(self.pyhicalSize.Y)]
+        self._cacheEx = [list(tuple()) for _ in range(self.pyhicalSize.Y)]
         for idx, rowSets in enumerate(self._effectiveRows):
             for xpos,lenth in rowSets:
                 self._cacheEx[idx].append( (xpos,BaeTermDraw.encodeBatchPixels(idx*2,xpos,lenth,self)))

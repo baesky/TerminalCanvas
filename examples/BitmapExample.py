@@ -20,8 +20,10 @@ bmp = s.convert('RGB')
 
 goblin = sprite(64,64,1,0,colrMode.Color24Bits)
 
+# Create a RT to draw
+RT = bs.BaeBuffer(64,64,colrMode.Color24Bits)
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline()
+drawPipe = bs.BaeTermDrawPipeline(RT)
 
 #draw pixels
 for y in range(bmp.height):

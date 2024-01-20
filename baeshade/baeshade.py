@@ -244,10 +244,10 @@ class BaeBuffer:
         return self.cache
     
     def genEffectiveEncodeBuffer(self):
-        self._cacheEx = [tuple() for _ in range(self.pyhicalSize.Y)]
+        self._cacheEx = [list() for _ in range(self.pyhicalSize.Y)]
         for idx, rowSets in enumerate(self._effectiveRows):
             for xpos,lenth in rowSets:
-                self._cacheEx[idx]=(xpos,BaeTermDraw.encodeBatchLine(idx*2,xpos,lenth,self))
+                self._cacheEx[idx].append( (xpos,BaeTermDraw.encodeBatchPixels(idx*2,xpos,lenth,self)))
 
         return self._cacheEx
 
@@ -280,6 +280,9 @@ class BaeBuffer:
                 if colr != invalidColor :
                     #dirt rt, must update 2 vertical subpixel once
                     self._dirtRows[y//2].add(x)
+
+        #sort set
+        self._dirtRows = map(sorted, self._dirtRows)
 
         for idx,row in enumerate(self._dirtRows):
             if len(row) == 0:
@@ -452,7 +455,8 @@ class BaeTermDrawPipeline:
         return len(self._primList)
 
     def __encodeDirtPixelsLine(self,x:int,y:int, buffstr:str,lx:int=0,ly:int=0):
-        return '\x1b[%d;%dH%s'%((ly+y)//2,lx+x,buffstr)
+        #top-left corner pos is (1,1)
+        return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
 
     def drawPrimitiveOnBg(self, delta:float):
         #_buff as Backgournd, not need update
@@ -476,11 +480,10 @@ class BaeTermDrawPipeline:
 
                 sortDirtPixelTime = BaeshadeUtil.Stopwatch()
 
-                for offsetY, enc in enumerate(exRow):
-                    if not enc:
-                        continue
-                    x, s = enc
-                    encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
+                for offsetY, tuplist in enumerate(exRow):
+                    for enc in tuplist:
+                        x, s = enc
+                        encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
                 
                 self.perfX = sortDirtPixelTime.stop()
 
@@ -642,12 +645,12 @@ class BaeTermDraw:
                 return ''
 
     @staticmethod
-    def encodeBatchLine(row:int,start:int,lenth:int,buff:BaeBuffer):
-        
-        #w = buff.virtualSize.X
-        #h = buff.virtualSize.Y
-        #encodeBuff=['\x1b[%d;%dH'%((ly+row)//2,lx+start)]
-
+    def encodeBatchPixels(row:int,start:int,lenth:int,buff:BaeBuffer):
+        """
+        row: y pos
+        start: x pos for start
+        length: how many pixel pair will be encode
+        """
         encodeBuff=[]
 
         for c in range(lenth):
@@ -656,7 +659,6 @@ class BaeTermDraw:
             subPixels = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =buff.colorMode)
             encodeBuff.append(subPixels)
         
-        encodeBuff.append('\n')
         return ''.join(encodeBuff)
 
     @staticmethod

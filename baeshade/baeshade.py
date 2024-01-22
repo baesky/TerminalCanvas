@@ -382,9 +382,8 @@ class BaeTermDrawPipeline:
         """
         self._buff = None
         self._enableDebug = debug
-        self._perf = 0
         self._perfStrFlush = 0
-        self.perfX = 0
+        self.perfX = 0.0
         self._screenMode = False
         self._primList = []
 
@@ -409,13 +408,6 @@ class BaeTermDrawPipeline:
     @property
     def colorMode(self):
         return self._buff.colorMode
-
-    @property
-    def pipelinePerf(self)->float:
-        """
-        whole pipeline excute time elapse in seconds
-        """
-        return self._perf
 
     @property
     def strPerf(self)->int:
@@ -500,18 +492,14 @@ class BaeTermDrawPipeline:
         output backbuffer to terminal
         delta: in second
         """
-        
-        singleRunPerf = BaeshadeUtil.Stopwatch()
+    
         self._perfStrFlush = 0
         
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
 
-        #self.drawPrimitive(delta)
-
         self.drawPrimitiveOnBg(delta)
 
-        self._perf = singleRunPerf.stop()
 
     def encodeRT(self,delta=0.0):
         if self._buff.isValid is False:

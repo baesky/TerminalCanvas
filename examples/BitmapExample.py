@@ -14,6 +14,7 @@ sprite = bs.BaeSprite
 path = os.path.join(os.getcwd(),"resource/sprite.png")
 pic = Image.open(path)
 
+# sprite sheet index
 n = 5
 
 s = pic.crop((n*192, 0, 192*(n+1), 192)).resize((64,64))

@@ -5,6 +5,9 @@ from PIL import Image
 import os
 import time
 
+bapp = bs.BaeApp
+bkey = bs.BaeKeyboard
+
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 bgcolor = vec3(64,64,64)
@@ -40,28 +43,9 @@ RT = bs.BaeBuffer(64,64,colrMode.Color24Bits)
 drawPipe = bs.BaeTermDrawPipeline(RT)
 drawPipe.addPrimtive(goblin)
 
-myTimer = util.Stopwatch()
+def tick(delta):
+    drawPipe.present(delta)
 
-try:
-    drawPipe.useExclusiveScreen(True)
-    while True:
+myApp = bapp(render=drawPipe,tick=tick)
 
-        delta = myTimer.last()
-
-        waitTimeSec = max(0.0,DisplayRate - delta)
-        delayTime = waitTimeSec
-        if delayTime > 0.005:
-            time.sleep(delayTime - 0.002)
-        
-        while delayTime > 0:
-            time.sleep(0)
-            delayTime -= myTimer.last()
-
-        drawPipe.present(delta + waitTimeSec)
-        
-        
-        print('\nfixed fps:%d, perf:%.3f ms, perfX:%.3f ms, charNum:%d       ' % (LimitFPS,drawPipe.pipelinePerf*1000, drawPipe.perfX*1000,drawPipe.strPerf),end="")
-except KeyboardInterrupt:
-    drawPipe.useExclusiveScreen(False)
-
-
+myApp.run()

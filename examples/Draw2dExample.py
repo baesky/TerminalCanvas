@@ -2,6 +2,7 @@
 
 import baeshade as bs
 
+util = bs.BaeshadeUtil
 vec2 = bs.BaeVec2d
 vec3 = bs.BaeVec3d
 sprite = bs.BaeSprite
@@ -27,3 +28,5 @@ drawPipe.drawLine2D(vec2(20,13),vec2(23,13), vec3(200,80,32))
 drawPipe.drawLine2D(vec2(20,14),vec2(22,14), vec3(200,80,32))
 # run one frame
 drawPipe.encodeRT()
+
+print(util.getTermSize())

@@ -5,8 +5,11 @@ from .baeshademath import BaeVec2d
 from .baeshademath import BaeVec3d
 from .baeshademath import BaeMathUtil
 from .baeshadeutil import BaeshadeUtil
+from .baeshademath import BaeBoundingBox2D
 from typing import Optional, Callable
 from enum import Enum
+from operator import itemgetter
+from itertools import groupby
 
 
 BAECODEX = BaeshadeUtil.EncodeTable
@@ -170,19 +173,22 @@ class BaeBuffer:
     virtual buffer for drawing
     """
     
-    def __init__(self,w,h,mode:BaeColorMode=BaeColorMode.Color8Bits):
+    def __init__(self,w:int,h:int,mode:BaeColorMode=BaeColorMode.Color8Bits):
         """
         w:terminal canvas width
         h:terminal canvas height
         """
         # row and colume in terminal
-        self._termSize = BaeVec2d(w,h)
+        self._termSize = BaeVec2d(w,BaeMathUtil.round(h/2))
         # virtual buffer size
-        self._vSize = BaeVec2d(w,h * 2)
+        self._vSize = BaeVec2d(w,h)
         self._colormode = mode
-        self._virtualBuffer = [ [0 for x in range(w)] for y in range(h*2)]
+        self._virtualBuffer = [ [BaeVec3d() for x in range(w)] for y in range(h)]
         self._cache = None
+        self._cacheEx = None
         self._bDirt = False
+        self._dirtRows = None
+        self._effectiveRows = None
 
     def getVirtualBuffer(self):
         return self._virtualBuffer
@@ -217,40 +223,175 @@ class BaeBuffer:
         return self._bDirt == False
 
     def fillAt(self,x:int,y:int,color:BaeVec3d)->None:
+        """
+        set RGB color to specified position
+        """
         self._virtualBuffer[y][x] = color
         self._bDirt = True
 
-    def genEncode(self):
+    def __genEncode(self):
+        """
+        Encode colors to ANSI strings
+        """
         self._cache = BaeTermDraw.encodeBuffer(self)
         self._bDirt = False
         return self._cache
     
+    def getEncodeBuffer(self)->str:
+        if self.isValid is False:
+            self.__genEncode()
+        
+        return self.cache
+    
+    def genEffectiveEncodeBuffer(self):
+        self._cacheEx = [list(tuple()) for _ in range(self.pyhicalSize.Y)]
+        for idx, rowSets in enumerate(self._effectiveRows):
+            for xpos,lenth in rowSets:
+                self._cacheEx[idx].append( (xpos,BaeTermDraw.encodeBatchPixels(idx*2,xpos,lenth,self)))
+
+        return self._cacheEx
+
+    def getEncodeBufferEx(self):
+        if self._cacheEx is None:
+            return self.genEffectiveEncodeBuffer()
+        else:
+            return self._cacheEx
+
     @property
     def cache(self):
         return self._cache
 
+    def getEffectivePixels(self, invalidColor:BaeVec3d):
+        return self._effectiveRows if self._effectiveRows != None else self.__trim(invalidColor)
+
+    
+
+    def __trim(self, invalidColor:BaeVec3d):
+        """
+        return a list of tuple(start,length), start: dirt pixel x pos, length 
+        rows in list are combined by 2 virtual row
+        """
+
+        self._dirtRows = [set() for _ in range(self.pyhicalSize.Y)]
+        self._effectiveRows = [list() for _ in range(self.pyhicalSize.Y)]
+        for y in range(self.virtualSize.Y):
+            for x in range(self.virtualSize.X):
+                colr = self.getPixel(x,y)
+                if colr != invalidColor :
+                    #dirt rt, must update 2 vertical subpixel once
+                    self._dirtRows[y//2].add(x)
+
+        #sort set
+        self._dirtRows = map(sorted, self._dirtRows)
+
+        for idx,row in enumerate(self._dirtRows):
+            if len(row) == 0:
+                continue
+            for k, g in groupby(enumerate(row), lambda x:x[0]-x[1]):
+                grp = (map(itemgetter(1),g))
+                grp = list(map(int,grp))
+                self._effectiveRows[idx].append((grp[0],grp[-1]-grp[0]+1))
+
+        return self._effectiveRows
+
+    def compute(self,kernel:Optional[Callable[[int,int, 'BaeBuffer'],BaeVec3d]]):
+        """
+        Run per pixel
+        """
+        if kernel == None:
+            return
+
+        bw = self.virtualSize.X
+        bh = self.virtualSize.Y
+
+        for row in range(bh):
+            for col in range(bw):
+                self.fillAt(col,row, kernel(col,row, BaeVec2d(bw,bh)))
+
+class BaeSprite():
+    def __init__(self,w:int,h:int,
+                 cnt:int = 1,
+                 fps:int=10,
+                 mode:BaeColorMode=BaeColorMode.Color8Bits,
+                 bgColr:BaeVec3d = BaeVec3d(0.0,0.0,0.0)):
+        """
+        w: width of sprite
+        h: height of sprite
+        cnt: sequence of the sprite
+        fps: sprite playing speed
+        mode: BaeColorMode
+        """
+        self._buff = [BaeBuffer(w,h,mode) for i in range(cnt)]
+        self._seqLen = cnt
+        self._bgColor = bgColr
+        self._playIndex = 0
+        self._fps = fps
+        self._bb = BaeBoundingBox2D()
+        self._pos = BaeVec2d(0,0)
+
+    @property
+    def bgColor(self):
+        return self._bgColor
+
+    @property
+    def getPos(self):
+        return self._pos
+
+    def setPos(self,x:int,y:int)->None:
+        self._pos.SetX(x)
+        self._pos.SetY(y)
+
+    def rawFillPixel(self,x:int,y:int,color:BaeVec3d,seq:int=0)->None:
+        self._buff[seq].fillAt(x, y, color)
+        if color != self.bgColor:
+            self._bb.addPoint(x,y)
+
+    def seq(self,idx:int)->BaeBuffer:
+        i = BaeMathUtil.clamp(idx, 0, self.seqNum - 1)
+        return self._buff[i]
+
+    @property
+    def playIndex(self)->int:
+        return BaeMathUtil.round(self._playIndex)
+
+    def getEffectiveRow(self):
+        return self.seq(self.playIndex).getEffectivePixels(self.bgColor)
+
+    def playAtRate(self, delta:float) -> BaeBuffer:
+        self._playIndex = (self._playIndex + delta * self.fps) % self.seqNum
+        return self.seq(self.playIndex)
+
+    def resetFrame(self):
+        self._playIndex = 0
+
+
+    @property
+    def fps(self):
+        return self._fps
+
+    @property
+    def seqNum(self):
+        return self._seqLen
+
 class BaeTermDrawPipeline:
     def __init__(self, 
-                 buf:BaeBuffer, 
-                 ps: Optional[Callable[[int,int, BaeBuffer],BaeVec3d]] = None,
+                 buf:BaeBuffer = None, 
                  debug = False):
         """
         buf: render target
-        ps: pixel shader
         """
-        self._buff = buf
-        self._ps = ps
+        self._buff = None
         self._enableDebug = debug
-        self._perf = 0
+        self._perfStrFlush = 0
+        self.perfX = 0.0
         self._screenMode = False
+        self._primList = []
+
+        self.bindRenderTaret(buf, True)
 
     @property
     def isExclusiveMode(self):
         return self._screenMode
-
-    @property
-    def pixelShader(self):
-        return self._ps
 
     @property
     def backbuffer(self):
@@ -269,15 +410,11 @@ class BaeTermDrawPipeline:
         return self._buff.colorMode
 
     @property
-    def pipelinePerf(self)->float:
+    def strPerf(self)->int:
         """
-        whole pipeline excute time elapse in seconds
+        character to flush in one frame
         """
-        return self._perf
-
-    @property
-    def debugable(self):
-        return self._enableDebug
+        return self._perfStrFlush
 
     def useExclusiveScreen(self,bExclusive:bool):
         """
@@ -291,66 +428,84 @@ class BaeTermDrawPipeline:
         if bExclusive == False:
             BaeshadeUtil.resetCursorPos()
 
-    def bindRenderTaret(self, buf : BaeBuffer):
+    def bindRenderTaret(self, buf : BaeBuffer, bNeedInvalidBuffer:bool = False):
         """
         bind a RT to draw
         """
         self._buff = buf
 
-    def __runPixelShader(self):
-
-        if self.pixelShader == None:
-            return
-
-        bw = self.backbufferWidth
-        bh = self.backbufferHeight
-
-        for row in range(bh):
-            for col in range(bw):
-                self.drawPixel(col,row, self.pixelShader(col,row, BaeVec2d(self.backbufferWidth,self.backbufferHeight)))
-
     def __flush(self, buffstr):
         #print(buffstr,flush=False)
         BaeshadeUtil.output(buffstr)
+        self._perfStrFlush += len(buffstr)
 
-    def __runFixedPipe(self):
-        self.__runPixelShader()
+    def addPrimtive(self, prim):
+        self._primList.append(prim)
 
+    @property
+    def PrimitivesNum(self):
+        return len(self._primList)
 
-    def present(self):
+    def __encodeDirtPixelsLine(self,x:int,y:int, buffstr:str,lx:int=0,ly:int=0):
+        #top-left corner pos is (1,1)
+        return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
+
+    def drawPrimitiveOnBg(self, delta:float):
+        #_buff as Backgournd, not need update
+        renderTarget = self._buff
+        rtH = renderTarget.virtualSize.Y
+        rtW = renderTarget.virtualSize.X
+
+        # draw dynamic primitives, not need really write to backbuffer
+        for p in self._primList:
+            #now only support sprite
+            if isinstance(p,BaeSprite):
+                
+                #get corresponding frame
+                bmp = p.playAtRate(delta)
+                p.getEffectiveRow()
+                #generate encode, don't need write to bg
+                pos = p.getPos
+                encode_buff = []
+
+                exRow = bmp.getEncodeBufferEx()
+
+                sortDirtPixelTime = BaeshadeUtil.Stopwatch()
+
+                for offsetY, tuplist in enumerate(exRow):
+                    for enc in tuplist:
+                        x, s = enc
+                        encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
+                
+                self.perfX = sortDirtPixelTime.stop()
+
+                self.__flush(''.join(encode_buff))
+        
+    def drawBackground(self):
+        pass
+
+    def drawPostprocess(self):
+        pass
+
+    def present(self, delta=0.0):
         """
         output backbuffer to terminal
-        exlusiveMode: bool, 
-                      True: content will try to display at top-left of the term
-                      False: content will display after command line 
+        delta: in second
         """
-        
-        singleRunPerf = BaeshadeUtil.Stopwatch()
+    
+        self._perfStrFlush = 0
         
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
 
-        self.__runPixelShader()
+        self.drawPrimitiveOnBg(delta)
 
-        # todo: refactor debug workflow
-        if self.debugable == True:
-            for row in range(0,self.backbufferHeight,2):
-                for col in range(self.backbufferWidth):
-                    nl = BAECODEX.NewLine if col >= (self.backbufferWidth - 1) else BAECODEX.Empty
-                    tColr = self.backbuffer[row][col]
-                    bColr = self.backbuffer[row+1][col]
-                    # draw per line so we can get debug with visualize
-                    pixelPair = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =self.colorMode)
-                    #print(pixelPair, end=nl)
-                    self.__flush(pixelPair + nl)
+
+    def encodeRT(self,delta=0.0):
+        if self._buff.isValid is False:
+            self.__flush(self._buff.getEncodeBuffer())            
         else:
-            if self._buff.isValid is False:
-                tempBuffer = BaeTermDraw.encodeBuffer(self._buff)
-                self.__flush(tempBuffer)            
-            else:
-                self.__flush(self._buff._cache)
-
-        self._perf = singleRunPerf.stop()
+            self.__flush(self._buff._cache)
 
     def clearScene(self,clrColor:BaeVec3d):
         """
@@ -361,7 +516,7 @@ class BaeTermDrawPipeline:
                 self.drawPixel(col,row, clrColor)
 
     def __clampInBuffer(self,pt:BaeVec2d):
-        return BaeVec2d(round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
+        return BaeVec2d(BaeMathUtil.round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), BaeMathUtil.round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
     def drawPixel(self,x:int,y:int,color:BaeVec3d):
         self._buff.fillAt(x,y,color)
@@ -387,11 +542,11 @@ class BaeTermDrawPipeline:
         
         #clamp to safe zone
 
-        sx = round(BaeMathUtil.clamp(start.X, 0, self.backbufferWidth))
-        sy = round(BaeMathUtil.clamp(start.Y, 0, self.backbufferHeight))
+        sx = BaeMathUtil.round(BaeMathUtil.clamp(start.X, 0, self.backbufferWidth))
+        sy = BaeMathUtil.round(BaeMathUtil.clamp(start.Y, 0, self.backbufferHeight))
 
-        ex = round(BaeMathUtil.clamp(end.X, 0, self.backbufferWidth))
-        ey = round(BaeMathUtil.clamp(end.Y, 0, self.backbufferHeight))
+        ex = BaeMathUtil.round(BaeMathUtil.clamp(end.X, 0, self.backbufferWidth))
+        ey = BaeMathUtil.round(BaeMathUtil.clamp(end.Y, 0, self.backbufferHeight))
 
         # simple DDA
         dx = ex - sx
@@ -424,7 +579,7 @@ class BaeTermDraw:
         r = max(0, min(255,rgb.X))
         g = max(0, min(255,rgb.Y))
         b = max(0, min(255,rgb.Z))
-        return BaeVec3d(round(r),round(g),round(b))
+        return BaeVec3d(BaeMathUtil.round(r),BaeMathUtil.round(g),BaeMathUtil.round(b))
 
     @staticmethod
     def encodePixel(topColr,botColr,mode):
@@ -434,9 +589,9 @@ class BaeTermDraw:
         tc = BaeTermDraw.quantify(topColr)
         bc = BaeTermDraw.quantify(botColr)
 
-        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b+10) + '\x1b[0m'
-        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) + '\x1b[0m'
-        encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) + '\x1b[0m'
+        encode4bit = lambda t, b : '\x1b[%d;%dm▀' % (t,b+10) #+ '\x1b[0m'
+        encode8bit = lambda t,b : '\x1b[48;5;%dm' % (b) + '\x1b[38;5;%dm▀' % (t) #+ '\x1b[0m'
+        encode24bit = lambda t, b : '\x1b[48;2;%d;%d;%dm' % (b.X,b.Y,b.Z) + '\x1b[38;2;%d;%d;%dm▀' % (t.X,t.Y,t.Z) #+ '\x1b[0m'
 
         match mode:
             case BaeColorMode.Color4Bits:
@@ -449,6 +604,22 @@ class BaeTermDraw:
                 assert True, "Not supported Color mode"
                 return ''
 
+    @staticmethod
+    def encodeBatchPixels(row:int,start:int,lenth:int,buff:BaeBuffer):
+        """
+        row: y pos
+        start: x pos for start
+        length: how many pixel pair will be encode
+        """
+        encodeBuff=[]
+
+        for c in range(lenth):
+            tColr = buff.getPixel(start+c,row)
+            bColr = buff.getPixel(start+c,row+1)
+            subPixels = BaeTermDraw.encodePixel(topColr=tColr,botColr=bColr,mode =buff.colorMode)
+            encodeBuff.append(subPixels)
+        
+        return ''.join(encodeBuff)
 
     @staticmethod
     def encodeBuffer(buff:BaeBuffer):
@@ -470,3 +641,4 @@ class BaeTermDraw:
                 encodeBuff.append(subPixels + nl)
 
         return ''.join(encodeBuff)
+    

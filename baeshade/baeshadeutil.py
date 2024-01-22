@@ -2,6 +2,7 @@
 from enum import Enum
 import time
 import sys
+import shutil
 
 class BaeshadeUtil:
     class EncodeTable(str,Enum):
@@ -17,6 +18,11 @@ class BaeshadeUtil:
         def __str__(self) -> str:
             return self.value
     
+    @staticmethod
+    def getTermSize()->tuple[int,int]:
+        columns, rows = shutil.get_terminal_size()
+        return columns, rows
+
     @staticmethod
     def output(str):
         sys.stdout.write(str)
@@ -49,25 +55,28 @@ class BaeshadeUtil:
 
     class Stopwatch():
         """
-        a simple time measure util, in milliseconds
+        a simple time measure util, in second
         """
         
         def __init__(self):
-            self._prevTime = time.perf_counter_ns()
+           self.reset()
 
         def last(self)->float:
             """
             use this for fps calculate
             """
             nowTime = time.perf_counter_ns()
-            lastTime = nowTime - self._prevTime
+            deltaTime = nowTime - self._prevTime
             self._prevTime = nowTime
-            return lastTime * 1e-6
+            return deltaTime * 1e-9
+
+        def reset(self):
+             self._prevTime = time.perf_counter_ns()
 
         def stop(self) -> float:
             """
             return time elapse from prev timing
             """
-            return (time.perf_counter_ns() - self._prevTime) * 1e-6
+            return (time.perf_counter_ns() - self._prevTime) * 1e-9
 
     

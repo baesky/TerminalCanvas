@@ -26,4 +26,4 @@ drawPipe.drawLine2D(vec2(24,10),vec2(24,12), vec3(0,0,0))
 drawPipe.drawLine2D(vec2(20,13),vec2(23,13), vec3(200,80,32))
 drawPipe.drawLine2D(vec2(20,14),vec2(22,14), vec3(200,80,32))
 # run one frame
-drawPipe.present()
+drawPipe.encodeRT()

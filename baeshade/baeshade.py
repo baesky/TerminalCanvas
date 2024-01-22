@@ -488,46 +488,12 @@ class BaeTermDrawPipeline:
                 self.perfX = sortDirtPixelTime.stop()
 
                 self.__flush(''.join(encode_buff))
-
-
-    def drawPrimitive(self, delta:float):
-        renderTarget = self._buff
-        rows = renderTarget.virtualSize.Y
-        rtDirtRow = [set() for _ in range(rows)]
-        rtCombRow = [list() for _ in range(rows)]
-
-        for p in self._primList:
-            if isinstance(p,BaeSprite):
-                bmp = p.playAtRate(delta)
-
-                effRow = p.getEffectiveRow()
-                
-                for idx, rowSets in enumerate(effRow):
-                    rtDirtRow[idx] |= rowSets
-                    for xPos in rowSets:
-                        renderTarget.fillAt(xPos,idx, bmp.getPixel(xPos, idx))
-                
-        encode_buff = []
-
-        sortDirtPixelTime = BaeshadeUtil.Stopwatch()
-        # gater dirt bits group
-        for idx in range(rows):
-            if len(rtDirtRow[idx]) == 0:
-                continue
-
-            for k, g in groupby(enumerate(rtDirtRow[idx]), lambda x:x[0]-x[1]):
-                grp = (map(itemgetter(1),g))
-                grp = list(map(int,grp))
-                rtCombRow[idx].append((grp[0],grp[-1]-grp[0]+1))
-
-            for s,c in rtCombRow[idx]:
-                encode_buff.extend(self.__encodeDirtPixels(s,idx,c,renderTarget))
-
-        self.perfX = sortDirtPixelTime.stop()
         
-        self.__flush(''.join(encode_buff))
-        
+    def drawBackground(self):
+        pass
 
+    def drawPostprocess(self):
+        pass
 
     def present(self, delta=0.0):
         """
@@ -546,6 +512,12 @@ class BaeTermDrawPipeline:
         self.drawPrimitiveOnBg(delta)
 
         self._perf = singleRunPerf.stop()
+
+    def encodeRT(self,delta=0.0):
+        if self._buff.isValid is False:
+            self.__flush(self._buff.getEncodeBuffer())            
+        else:
+            self.__flush(self._buff._cache)
 
     def clearScene(self,clrColor:BaeVec3d):
         """

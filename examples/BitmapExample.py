@@ -14,7 +14,9 @@ sprite = bs.BaeSprite
 path = os.path.join(os.getcwd(),"resource/sprite.png")
 pic = Image.open(path)
 
-s = pic.crop((0, 0, 192, 192)).resize((64,64))
+n = 5
+
+s = pic.crop((n*192, 0, 192*(n+1), 192)).resize((64,64))
 
 bmp = s.convert('RGB')
 

@@ -100,4 +100,4 @@ buf.compute(pixelShader)
 drawPipe = bs.BaeTermDrawPipeline(buf=buf,debug=True)
 
 # run one frame
-drawPipe.present()
+drawPipe.encodeRT()

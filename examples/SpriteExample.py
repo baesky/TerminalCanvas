@@ -4,6 +4,7 @@ import baeshade as bs
 from PIL import Image
 import os
 import time
+import math
 
 bapp = bs.BaeApp
 bkey = bs.BaeKeyboard
@@ -37,13 +38,19 @@ for frame in range(7):
             goblin.rawFillPixel(col,row,vec3(r,g,b),frame)
 
 # Create a RT to draw
-RT = bs.BaeBuffer(64,64,colrMode.Color24Bits)
+RT = bs.BaeBuffer(128,64,colrMode.Color24Bits)
 
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(RT)
 drawPipe.addPrimtive(goblin)
-
-def tick(delta):
+acc = 0
+def tick(delta:float):
+    util.clearScreen()
+    global acc
+    acc = acc + delta
+    v = (math.sin(acc)+1.0)*0.5
+    v *= 0.5
+    goblin.setPos(100*v,0)
     drawPipe.present(delta)
 
 myApp = bapp(render=drawPipe,tick=tick)

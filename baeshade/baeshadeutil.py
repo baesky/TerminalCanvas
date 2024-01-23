@@ -15,6 +15,7 @@ class BaeshadeUtil:
         EnterAltBuffer = '\x1b[?1049h'
         LeaveAltBuffer = '\x1b[?1049l'
         Reset = '\x1b[0m'
+        Bell = '\007'
 
         def __str__(self) -> str:
             return self.value
@@ -56,10 +57,13 @@ class BaeshadeUtil:
         BaeshadeUtil.resetAttribute()
         BaeshadeUtil.clearScreen()
         
+    @staticmethod
+    def bell():
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.Bell)
 
     @staticmethod
     def quit():
-        BaeshadeUtil.clearScreen()
+        BaeshadeUtil.restoreScreen()
         BaeshadeUtil.showCursor(True)
         BaeshadeUtil.resetCursorPos()
 

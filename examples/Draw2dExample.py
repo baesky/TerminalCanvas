@@ -30,3 +30,4 @@ drawPipe.drawLine2D(vec2(20,14),vec2(22,14), vec3(200,80,32))
 drawPipe.encodeRT()
 
 print(util.getTermSize())
+util.resetAttribute()

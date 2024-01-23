@@ -14,6 +14,7 @@ class BaeshadeUtil:
         Erase = '\x1b[%dJ'
         EnterAltBuffer = '\x1b[?1049h'
         LeaveAltBuffer = '\x1b[?1049l'
+        Reset = '\x1b[0m'
 
         def __str__(self) -> str:
             return self.value
@@ -46,6 +47,15 @@ class BaeshadeUtil:
         #print(BaeshadeUtil.EncodeTable.Erase % (2), end="")
         BaeshadeUtil.output(BaeshadeUtil.EncodeTable.Erase % (2))
 
+    @staticmethod
+    def resetAttribute():
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.Reset)
+
+    @staticmethod
+    def restoreScreen():
+        BaeshadeUtil.resetAttribute()
+        BaeshadeUtil.clearScreen()
+        
 
     @staticmethod
     def quit():

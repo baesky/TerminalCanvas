@@ -45,6 +45,7 @@ class BaeApp:
     def __exitApp(self):
         # back to previous terminal mode
         self._renderPipe.useExclusiveScreen(False)
+        BaeshadeUtil.restoreScreen()
 
     def __prepareRunApp(self):
 

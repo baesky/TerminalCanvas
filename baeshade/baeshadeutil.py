@@ -27,7 +27,12 @@ class BaeshadeUtil:
 
     @staticmethod
     def output(str):
+        #sys.stdout.buffer.write(str.encode('UTF-8'))
         sys.stdout.write(str)
+
+    @staticmethod
+    def flush():
+        sys.stdout.flush()
 
     @staticmethod
     def ExclusiveScreen(bExclusive:bool):

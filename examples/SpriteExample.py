@@ -35,6 +35,12 @@ def extractResource(path,w,h,seqNum,fps,colorMode)->sprite:
 
     return actor
 
+def extractResourceTile(path,w,h)->sprite:
+    pic = Image.open(path)
+    bmp = pic.convert('RGB')
+    actor = sprite(w,h,1,0,colrMode.Color24Bits)
+    p = bmp.crop((0, 0,  192, 192)).resize((64,64))
+
 #read a pic
 actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
 bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")

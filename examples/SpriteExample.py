@@ -40,6 +40,13 @@ def extractResourceTile(path,w,h)->sprite:
     bmp = pic.convert('RGB')
     actor = sprite(w,h,1,0,colrMode.Color24Bits)
     p = bmp.crop((0, 0,  192, 192)).resize((64,64))
+    for row in range(h):
+        for col in range(w):
+            r,g,b = p.getpixel((col%p.width,row%p.height))
+            actor.rawFillPixel(col,row,vec3(r,g,b),0)
+    
+    return actor
+
 
 #read a pic
 actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
@@ -47,14 +54,14 @@ bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
 
 goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
 
-ground = extractResource(bg_path,64,64,1,0,colrMode.Color24Bits)
+ground = extractResourceTile(bg_path,128,64)
 
 # Create a RT to draw
 RT = bs.BaeBuffer(128,64,colrMode.Color24Bits)
 
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(RT)
-drawPipe.addPrimtive(ground)
+drawPipe.addBackGround(ground)
 drawPipe.addPrimtive(goblin)
 acc = 0
 

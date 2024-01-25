@@ -386,6 +386,7 @@ class BaeTermDrawPipeline:
         self.perfX = 0.0
         self._screenMode = False
         self._primList = []
+        self._backgroundCache = None
 
         self.bindRenderTaret(buf, True)
 
@@ -439,7 +440,11 @@ class BaeTermDrawPipeline:
         BaeshadeUtil.output(buffstr)
         self._perfStrFlush += len(buffstr)
 
-    def addPrimtive(self, prim):
+    def addBackGround(self, prim:BaeSprite):
+        bmp = prim.seq(0)
+        self._backgroundCache = bmp.getEncodeBuffer()
+
+    def addPrimtive(self, prim:BaeSprite):
         self._primList.append(prim)
 
     @property
@@ -449,6 +454,11 @@ class BaeTermDrawPipeline:
     def __encodeDirtPixelsLine(self,x:int,y:int, buffstr:str,lx:int=0,ly:int=0):
         #top-left corner pos is (1,1)
         return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
+
+    def drawBackground(self):
+        if self._backgroundCache:
+            self.__flush(self._backgroundCache)
+
 
     def drawPrimitiveOnBg(self, delta:float):
         #_buff as Backgournd, not need update
@@ -480,9 +490,6 @@ class BaeTermDrawPipeline:
                 self.perfX = sortDirtPixelTime.stop()
 
                 self.__flush(''.join(encode_buff))
-        
-    def drawBackground(self):
-        pass
 
     def drawPostprocess(self):
         pass
@@ -498,6 +505,8 @@ class BaeTermDrawPipeline:
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
 
+        # painter's algrithm
+        self.drawBackground()
         self.drawPrimitiveOnBg(delta)
 
 

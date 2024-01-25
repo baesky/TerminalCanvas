@@ -11,7 +11,7 @@ bkey = bs.BaeKeyboard
 
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
-bgcolor = vec3(64,64,64)
+
 util = bs.BaeshadeUtil
 sprite = bs.BaeSprite
 colrMode = bs.BaeColorMode
@@ -19,23 +19,29 @@ colrMode = bs.BaeColorMode
 LimitFPS = 10
 DisplayRate = 1.0 / LimitFPS
 
+def extractResource(path,w,h,seqNum,fps,colorMode)->sprite:
+    pic = Image.open(path)
+    bmp = pic.convert('RGB')
+    actor = sprite(w,h,seqNum,fps,colorMode)
+    for frame in range(seqNum):
+        ptX = frame * 192
+        ptY = 0
+        p = bmp.crop((ptX, ptY, ptX + 192, ptY + 192)).resize((64,64))
+
+        for row in range(p.height):
+            for col in range(p.width):
+                r,g,b = p.getpixel((col,row))
+                actor.rawFillPixel(col,row,vec3(r,g,b),frame)
+
+    return actor
+
 #read a pic
-path = os.path.join(os.getcwd(),"resource/sprite.png")
-pic = Image.open(path)
-bmp = pic.convert('RGB')
+actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
+bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
 
-goblin = sprite(64,64,7,10,colrMode.Color24Bits)
+goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
 
-#extract sprite
-for frame in range(7):
-    ptX = frame * 192
-    ptY = 0
-    p = bmp.crop((ptX, ptY, ptX + 192, ptY + 192)).resize((64,64))
-
-    for row in range(p.height):
-        for col in range(p.width):
-            r,g,b = p.getpixel((col,row))
-            goblin.rawFillPixel(col,row,vec3(r,g,b),frame)
+ground = extractResource(bg_path,64,64,1,0,colrMode.Color24Bits)
 
 # Create a RT to draw
 RT = bs.BaeBuffer(128,64,colrMode.Color24Bits)

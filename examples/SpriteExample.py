@@ -42,9 +42,11 @@ RT = bs.BaeBuffer(128,64,colrMode.Color24Bits)
 
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(RT)
+drawPipe.addPrimtive(ground)
 drawPipe.addPrimtive(goblin)
 acc = 0
-def tick(delta:float):
+
+async def tick(delta:float):
     util.clearScreen()
     global acc
     acc = acc + delta

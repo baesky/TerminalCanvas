@@ -380,13 +380,13 @@ class BaeTermDrawPipeline:
         """
         buf: render target
         """
-        self._buff = None
+        self._buff:BaeBuffer = None
         self._enableDebug = debug
         self._perfStrFlush = 0
         self.perfX = 0.0
         self._screenMode = False
-        self._primList = []
-        self._backgroundCache = None
+        self._primList = [BaeSprite]
+        self._backgroundCache:str = None
 
         self.bindRenderTaret(buf, True)
 

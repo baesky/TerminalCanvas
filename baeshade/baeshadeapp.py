@@ -79,7 +79,7 @@ class BaeApp:
         await self._tick(delta + waitTimeSec)
         self._tickPerf = self._tickTimer.stop()
 
-        print('\nfixed fps:%d, tick:%.3f ms, perfX:%.3f ms, Characters Num:%d       ' % (self.LimitFPS ,self._tickPerf*1000, self._renderPipe.perfX*1000, self._renderPipe.strPerf),end="")
+        self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2-1,'\nfixed fps:%d, tick:%.3f ms, perfX:%.3f ms, Characters Num:%d       ' % (self.LimitFPS ,self._tickPerf*1000, self._renderPipe.perfX*1000, self._renderPipe.strPerf))
 
     def run(self):
         

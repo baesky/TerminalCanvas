@@ -518,10 +518,14 @@ class BaeTermDrawPipeline:
     def __clampInBuffer(self,pt:BaeVec2d):
         return BaeVec2d(BaeMathUtil.round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), BaeMathUtil.round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
-    def drawPixel(self,x:int,y:int,color:BaeVec3d):
+    def drawText(self, x:int,y:int, txt:str)->None:
+        BaeshadeUtil.resetCursorPos(y,x)
+        print(txt)
+
+    def drawPixel(self,x:int,y:int,color:BaeVec3d)->None:
         self._buff.fillAt(x,y,color)
 
-    def drawSolidCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d):
+    def drawSolidCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d)->None:
         c = self.__clampInBuffer(center)
         bw = self.backbufferWidth
         bh = self.backbufferHeight
@@ -532,7 +536,7 @@ class BaeTermDrawPipeline:
                 if dist <= r*r:
                     self.drawPixel(col,row,color)
 
-    def drawLine2D(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d):
+    def drawLine2D(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d)->None:
         """
         draw a line segment
         start: where the line start

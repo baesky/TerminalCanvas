@@ -8,7 +8,7 @@ class BaeshadeUtil:
     class EncodeTable(str,Enum):
         Empty = ''
         NewLine = '\n'
-        CursorHomePos = '\x1b[%d;%dH'
+        CursorPos = '\x1b[%d;%dH'
         HideCursor = '\x1b[?25l'
         ShowCursor = '\x1b[?25h'
         Erase = '\x1b[%dJ'
@@ -46,7 +46,7 @@ class BaeshadeUtil:
     @staticmethod
     def resetCursorPos(x:int = 1,y:int = 1):
         #print(BaeshadeUtil.EncodeTable.CursorHomePos % (x,y), end="")
-        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.CursorHomePos % (x,y))
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.CursorPos % (x,y))
 
     @staticmethod
     def clearScreen():

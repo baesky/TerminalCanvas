@@ -54,10 +54,10 @@ bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
 
 goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
 
-ground = extractResourceTile(bg_path,128,64)
+ground = extractResourceTile(bg_path,192,64)
 
 # Create a RT to draw
-RT = bs.BaeBuffer(128,64,colrMode.Color24Bits)
+RT = bs.BaeBuffer(192,64,colrMode.Color24Bits)
 
 # config pipeline
 drawPipe = bs.BaeTermDrawPipeline(RT)
@@ -65,8 +65,7 @@ drawPipe.addBackGround(ground)
 drawPipe.addPrimtive(goblin)
 acc = 0
 
-async def tick(delta:float):
-    util.clearScreen()
+def gameTick(delta:float):
     global acc
     acc = acc + delta
     v = (math.sin(acc)+1.0)*0.5
@@ -74,6 +73,6 @@ async def tick(delta:float):
     goblin.setPos(100*v,0)
     
 
-myApp = bapp(render=drawPipe,tick=tick)
+myApp = bapp(render=drawPipe,tick=gameTick)
 
 myApp.run()

@@ -497,7 +497,6 @@ class BaeTermDrawPipeline:
     async def present(self, delta=0.0):
         """
         output backbuffer to terminal
-        delta: in second
         """
     
         self._perfStrFlush = 0
@@ -509,7 +508,6 @@ class BaeTermDrawPipeline:
         self.drawBackground()
         self.drawPrimitiveOnBg(delta)
 
-
     def encodeRT(self,delta=0.0):
         if self._buff.isValid is False:
             self.__flush(self._buff.getEncodeBuffer())            
@@ -519,6 +517,7 @@ class BaeTermDrawPipeline:
     def clearScene(self,clrColor:BaeVec3d):
         """
         clear backbuffer to clrColor
+        Note: low performance
         """
         for row in range(self.backbufferHeight):
             for col in range(self.backbufferWidth):

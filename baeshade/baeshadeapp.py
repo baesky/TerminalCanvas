@@ -78,7 +78,7 @@ class BaeApp:
             delayTime -= self._frameTimer.last()
 
         tickPerf = self._tickTimer.reset()
-        await self._tick(delta + waitTimeSec)
+        self._tick(delta + waitTimeSec)
         self._tickPerf = self._tickTimer.stop()
 
         drawPerf = self._tickTimer.reset()
@@ -88,6 +88,7 @@ class BaeApp:
         # draw perf stat
         self._renderPipe.drawText(1,self._renderPipe.backbufferHeight//2-1, 'tick: %.3f ms, draw: %.3f ms'%(self._tickPerf*1000.0, drawPerf*1000.0))
         self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2,'fixed fps:%d, bandwidth:%d' % (self.LimitFPS , self._renderPipe.strPerf))
+
 
     async def __LoopWrapper(self):
         try:
@@ -106,8 +107,9 @@ class BaeApp:
 
     def run(self):        
         self.__prepareRunApp()
-        p = Process(target=self.__initLoop)
-        p.start()
+        #p = Process(target=self.__initLoop)
+        #p.start()
+        self.__initLoop()
 
 
 

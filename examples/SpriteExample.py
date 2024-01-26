@@ -75,4 +75,7 @@ def gameTick(delta:float):
 
 myApp = bapp(render=drawPipe,tick=gameTick)
 
-myApp.run()
+#myApp.run()
+drawPipe.clearScene(vec3(0,0,0))
+drawPipe.drawSprite(100,20, goblin.seq(0))
+drawPipe.encodeRT()

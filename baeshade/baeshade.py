@@ -173,7 +173,7 @@ class BaeBuffer:
     virtual buffer for drawing
     """
     
-    def __init__(self,w:int,h:int,mode:BaeColorMode=BaeColorMode.Color8Bits):
+    def __init__(self,w:int,h:int,mode:BaeColorMode=BaeColorMode.Color8Bits,trimColor:BaeVec3d=BaeVec3d(0.0,0.0,0.0)):
         """
         w:terminal canvas width
         h:terminal canvas height
@@ -189,6 +189,7 @@ class BaeBuffer:
         self._bDirt = False
         self._dirtRows = None
         self._effectiveRows = None
+        self._invalidColor = trimColor
 
     def getVirtualBuffer(self):
         return self._virtualBuffer
@@ -237,6 +238,24 @@ class BaeBuffer:
         self._bDirt = False
         return self._cache
     
+    def getDirtRow(self):
+        if self._dirtRows is not None:
+            return self._dirtRows
+        else:
+            self.__genDirtRow(self._invalidColor)
+            return self._dirtRows
+    
+    def __genDirtRow(self, ignoreColor:BaeVec3d):
+        self._dirtRows = [set() for _ in range(self.pyhicalSize.Y)]
+        for y in range(self.virtualSize.Y):
+            for x in range(self.virtualSize.X):
+                colr = self.getPixel(x,y)
+                if colr != ignoreColor :
+                    #dirt rt, must update 2 vertical subpixel once
+                    self._dirtRows[y//2].add(x)
+        #sort set
+        self._dirtRows = map(sorted, self._dirtRows)
+
     def getEncodeBuffer(self)->str:
         if self.isValid is False:
             self.__genEncode()
@@ -245,7 +264,7 @@ class BaeBuffer:
     
     def genEffectiveEncodeBuffer(self):
         self._cacheEx = [list(tuple()) for _ in range(self.pyhicalSize.Y)]
-        for idx, rowSets in enumerate(self._effectiveRows):
+        for idx, rowSets in enumerate(self.getEffectivePixels()):
             for xpos,lenth in rowSets:
                 self._cacheEx[idx].append( (xpos,BaeTermDraw.encodeBatchPixels(idx*2,xpos,lenth,self)))
 
@@ -261,10 +280,8 @@ class BaeBuffer:
     def cache(self):
         return self._cache
 
-    def getEffectivePixels(self, invalidColor:BaeVec3d):
-        return self._effectiveRows if self._effectiveRows != None else self.__trim(invalidColor)
-
-    
+    def getEffectivePixels(self):
+        return self._effectiveRows if self._effectiveRows != None else self.__trim(self._invalidColor)
 
     def __trim(self, invalidColor:BaeVec3d):
         """
@@ -272,19 +289,8 @@ class BaeBuffer:
         rows in list are combined by 2 virtual row
         """
 
-        self._dirtRows = [set() for _ in range(self.pyhicalSize.Y)]
         self._effectiveRows = [list() for _ in range(self.pyhicalSize.Y)]
-        for y in range(self.virtualSize.Y):
-            for x in range(self.virtualSize.X):
-                colr = self.getPixel(x,y)
-                if colr != invalidColor :
-                    #dirt rt, must update 2 vertical subpixel once
-                    self._dirtRows[y//2].add(x)
-
-        #sort set
-        self._dirtRows = map(sorted, self._dirtRows)
-
-        for idx,row in enumerate(self._dirtRows):
+        for idx,row in enumerate(self.getDirtRow()):
             if len(row) == 0:
                 continue
             for k, g in groupby(enumerate(row), lambda x:x[0]-x[1]):
@@ -321,7 +327,7 @@ class BaeSprite():
         fps: sprite playing speed
         mode: BaeColorMode
         """
-        self._buff = [BaeBuffer(w,h,mode) for i in range(cnt)]
+        self._buff = [BaeBuffer(w,h,mode,bgColr) for i in range(cnt)]
         self._seqLen = cnt
         self._bgColor = bgColr
         self._playIndex = 0
@@ -334,7 +340,7 @@ class BaeSprite():
         return self._bgColor
 
     @property
-    def getPos(self):
+    def Pos(self):
         return self._pos
 
     def setPos(self,x:int,y:int)->None:
@@ -354,11 +360,9 @@ class BaeSprite():
     def playIndex(self)->int:
         return BaeMathUtil.round(self._playIndex)
 
-    def getEffectiveRow(self):
-        return self.seq(self.playIndex).getEffectivePixels(self.bgColor)
-
     def playAtRate(self, delta:float) -> BaeBuffer:
         self._playIndex = (self._playIndex + delta * self.fps) % self.seqNum
+
         return self.seq(self.playIndex)
 
     def resetFrame(self):
@@ -456,8 +460,10 @@ class BaeTermDrawPipeline:
         return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
 
     def drawBackground(self):
+        sortDirtPixelTime = BaeshadeUtil.Stopwatch()
         if self._backgroundCache:
             self.__flush(self._backgroundCache)
+        self.perfX = sortDirtPixelTime.stop()
 
 
     def drawPrimitiveOnBg(self, delta:float):
@@ -473,25 +479,54 @@ class BaeTermDrawPipeline:
                 
                 #get corresponding frame
                 bmp = p.playAtRate(delta)
-                p.getEffectiveRow()
                 #generate encode, don't need write to bg
-                pos = p.getPos
+                pos = p.Pos
                 encode_buff = []
 
                 exRow = bmp.getEncodeBufferEx()
-
-                sortDirtPixelTime = BaeshadeUtil.Stopwatch()
 
                 for offsetY, tuplist in enumerate(exRow):
                     for enc in tuplist:
                         x, s = enc
                         encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
-                
-                self.perfX = sortDirtPixelTime.stop()
 
                 self.__flush(''.join(encode_buff))
 
-    def drawPostprocess(self):
+    def drawSprite(self, x:int,y:int,src:BaeBuffer):
+
+        dirtRow = src.getDirtRow()
+        if dirtRow:
+            for idx,row in enumerate(dirtRow):
+                if len(row) == 0:
+                    continue
+                sx = 0
+                for offsetX in row:
+                    if 0 < (sx+x) < self.backbufferWidth and 0 < (idx*2 + y) < self.backbufferHeight:
+                        tc = src.getPixel(offsetX,idx*2)
+                        bc = src.getPixel(offsetX,idx*2+1)
+                        self.drawPixel(sx+x,idx*2 + y, tc)
+                        self.drawPixel(sx+x,idx*2 + 1 + y, bc)
+                        sx += 1
+
+
+    def drawPrimitive(self, delta):
+         renderTarget = self._buff
+         for p in self._primList:
+             if isinstance(p,BaeSprite):
+                 bmp = p.playAtRate(delta)
+                 pos = p.Pos
+                 exRow = bmp.getDir
+                 for idx, rowSets in enumerate(exRow):
+                     for xpos,lenth in rowSets:
+                        for x in range(lenth):
+                            self.drawPixel(xpos+x, idx*2, bmp)
+                        
+
+    
+    async def presentEX(self, delta=0.0):
+        # draw per primitve, get dirt rect list
+
+        # draw bg where not dirt
         pass
 
     async def present(self, delta=0.0):

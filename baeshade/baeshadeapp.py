@@ -87,8 +87,7 @@ class BaeApp:
 
         # draw perf stat
         self._renderPipe.drawText(1,self._renderPipe.backbufferHeight//2-1, 'tick: %.3f ms, draw: %.3f ms'%(self._tickPerf*1000.0, drawPerf*1000.0))
-        self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2,'fixed fps:%d, bandwidth:%d' % (self.LimitFPS , self._renderPipe.strPerf))
-
+        self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2,'fixed fps:%d, bandwidth:%s' % (self.LimitFPS , f"{self._renderPipe.strPerf:,}"))
 
     async def __LoopWrapper(self):
         try:

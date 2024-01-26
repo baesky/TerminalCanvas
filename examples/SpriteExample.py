@@ -72,7 +72,7 @@ async def tick(delta:float):
     v = (math.sin(acc)+1.0)*0.5
     v *= 0.5
     goblin.setPos(100*v,0)
-    drawPipe.present(delta)
+    
 
 myApp = bapp(render=drawPipe,tick=tick)
 

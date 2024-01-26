@@ -494,7 +494,7 @@ class BaeTermDrawPipeline:
     def drawPostprocess(self):
         pass
 
-    def present(self, delta=0.0):
+    async def present(self, delta=0.0):
         """
         output backbuffer to terminal
         delta: in second

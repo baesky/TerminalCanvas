@@ -70,11 +70,11 @@ class BaeApp:
         waitTimeSec = max(0.0,self._displayRate - delta)
         delayTime = waitTimeSec
         if delayTime > 0.005:
-            asyncio.sleep(delayTime - 0.002)
+            asyncio.sleep(delayTime - 0.001)
             delayTime -= self._frameTimer.last()
         
         while delayTime > 0:
-            asyncio.sleep(0.002)
+            asyncio.sleep(0.001)
             delayTime -= self._frameTimer.last()
 
         tickPerf = self._tickTimer.reset()
@@ -93,6 +93,7 @@ class BaeApp:
         try:
             while self._bExit is False:
                 await self.__Loop()
+                await asyncio.sleep(0.001)
         
             self.__exitApp()
 

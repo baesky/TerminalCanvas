@@ -201,6 +201,10 @@ class BaeBuffer:
     def getPixel(self,x:int,y:int):
         return self._virtualBuffer[y][x]
 
+    def getEffectPixel(self,x:int,y:int):
+        test_color = self._virtualBuffer[y][x]
+        return test_color if test_color != self._invalidColor else None
+
     @property
     def colorMode(self):
         return self._colormode
@@ -390,7 +394,10 @@ class BaeTermDrawPipeline:
         self.perfX = 0.0
         self._screenMode = False
         self._primList = [BaeSprite]
+
+
         self._backgroundCache:str = None
+        self.bg = None
 
         self.bindRenderTaret(buf, True)
 
@@ -447,6 +454,7 @@ class BaeTermDrawPipeline:
     def addBackGround(self, prim:BaeSprite):
         bmp = prim.seq(0)
         self._backgroundCache = bmp.getEncodeBuffer()
+        self.bg = bmp
 
     def addPrimtive(self, prim:BaeSprite):
         self._primList.append(prim)
@@ -459,19 +467,20 @@ class BaeTermDrawPipeline:
         #top-left corner pos is (1,1)
         return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
 
-    def drawBackground(self):
+    def drawBackground_Immeditately(self):
         sortDirtPixelTime = BaeshadeUtil.Stopwatch()
         if self._backgroundCache:
             self.__flush(self._backgroundCache)
         self.perfX = sortDirtPixelTime.stop()
 
+    def drawBackground(self):
+        rt = self._buff
+        bg_size = self.bg.virtualSize
+        for x in range(bg_size.X):
+            for y in range(bg_size.Y):
+                rt.fillAt(x,y, self.bg.getPixel(x,y))
 
-    def drawPrimitiveOnBg(self, delta:float):
-        #_buff as Backgournd, not need update
-        renderTarget = self._buff
-        rtH = renderTarget.virtualSize.Y
-        rtW = renderTarget.virtualSize.X
-
+    def drawPrimitiveOnBg_Immediately(self, delta:float):
         # draw dynamic primitives, not need really write to backbuffer
         for p in self._primList:
             #now only support sprite
@@ -491,6 +500,30 @@ class BaeTermDrawPipeline:
                         encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
 
                 self.__flush(''.join(encode_buff))
+
+    def drawPrimitiveOnBg(self, delta:float):
+        #_buff as Backgournd, not need update
+        renderTarget = self._buff
+        rtH = renderTarget.virtualSize.Y
+        rtW = renderTarget.virtualSize.X
+
+        # draw dynamic primitives, not need really write to backbuffer
+        for p in self._primList:
+            #now only support sprite
+            if isinstance(p,BaeSprite):
+                #get corresponding frame
+                bmp = p.playAtRate(delta)
+                bmp_size = bmp.virtualSize
+                #generate encode, don't need write to bg
+                pos = p.Pos
+
+                for x in range(bmp_size.X):
+                    for y in range(bmp_size.Y):
+                        col = bmp.getEffectPixel(x,y)
+                        if col is not None:
+                            renderTarget.fillAt(round(pos.X + x), round(pos.Y + y),col)
+
+
 
     def drawSprite(self, x:int,y:int,src:BaeBuffer):
 
@@ -539,9 +572,13 @@ class BaeTermDrawPipeline:
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
 
-        # painter's algrithm
+        # draw bg on virtual buffer
         self.drawBackground()
+        # draw actors on virutal buffer
         self.drawPrimitiveOnBg(delta)
+        # encode buffers and submit draw
+        self.encodeRT()
+
 
     def encodeRT(self,delta=0.0):
         if self._buff.isValid is False:

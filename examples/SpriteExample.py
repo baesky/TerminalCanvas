@@ -63,7 +63,7 @@ RT = bs.BaeBuffer(192,64,colrMode.Color24Bits)
 drawPipe = bs.BaeTermDrawPipeline(RT)
 drawPipe.addBackGround(ground)
 drawPipe.addPrimtive(goblin)
-#drawPipe.addPrimtive(goblin2)
+drawPipe.addPrimtive(goblin2)
 acc = 0
 
 def gameTick(delta:float):
@@ -72,7 +72,7 @@ def gameTick(delta:float):
     v = (math.sin(acc)+1.0)*0.5
     v *= 0.5
     goblin.setPos(100*v,0)
-    #goblin2.setPos(80*v, 3)
+    goblin2.setPos(80*v, 3)
     
 
 myApp = bapp(render=drawPipe,tick=gameTick)

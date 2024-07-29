@@ -57,8 +57,8 @@ class BaeApp:
         self._frameTimer = BaeshadeUtil.Stopwatch()
         self._tickTimer = BaeshadeUtil.Stopwatch()
 
-    def __HandleCtrlZ(self):
-        self.__exitApp()
+    def __HandleCtrlZ(self,sig,frame):
+        raise KeyboardInterrupt
 
     @property
     def LimitFPS(self):
@@ -70,11 +70,11 @@ class BaeApp:
         waitTimeSec = max(0.0,self._displayRate - delta)
         delayTime = waitTimeSec
         if delayTime > 0.005:
-            asyncio.sleep(delayTime - 0.001)
+            await asyncio.sleep(delayTime - 0.001)
             delayTime -= self._frameTimer.last()
         
         while delayTime > 0:
-            asyncio.sleep(0.001)
+            await asyncio.sleep(0.001)
             delayTime -= self._frameTimer.last()
 
         tickPerf = self._tickTimer.reset()
@@ -82,28 +82,29 @@ class BaeApp:
         self._tickPerf = self._tickTimer.stop()
 
         drawPerf = self._tickTimer.reset()
+
         await self._renderPipe.present(delta)
         drawPerf = self._tickTimer.stop()
 
         # draw perf stat
-        self._renderPipe.drawText(1,self._renderPipe.backbufferHeight//2-1, 'tick: %.3f ms, draw: %.3f ms'%(self._tickPerf*1000.0, drawPerf*1000.0))
+        self._renderPipe.drawText(1,self._renderPipe.backbufferHeight//2-1, 'tick: %.3f ms, draw: %.3f ms bg: %.3f'%(self._tickPerf*1000.0, drawPerf*1000.0, self._renderPipe.perfX*1000.0))
         self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2,'fixed fps:%d, bandwidth:%s' % (self.LimitFPS , f"{self._renderPipe.strPerf:,}"))
 
     async def __LoopWrapper(self):
-        try:
             while self._bExit is False:
                 await self.__Loop()
                 await asyncio.sleep(0.001)
         
             self.__exitApp()
-
-        except KeyboardInterrupt:
-            self.__exitApp()
+        
     
     def __initLoop(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.__LoopWrapper())
+        try:
+            loop.run_until_complete(self.__LoopWrapper())
+        except KeyboardInterrupt:
+            self.__exitApp()
 
     def run(self):        
         self.__prepareRunApp()

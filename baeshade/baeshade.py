@@ -1,5 +1,7 @@
 import os
 import datetime
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 from .baeshademath import BaeVec2d
 from .baeshademath import BaeVec3d
@@ -468,12 +470,12 @@ class BaeTermDrawPipeline:
         return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
 
     def drawBackground_Immeditately(self):
-        sortDirtPixelTime = BaeshadeUtil.Stopwatch()
+        
         if self._backgroundCache:
             self.__flush(self._backgroundCache)
-        self.perfX = sortDirtPixelTime.stop()
 
     def drawBackground(self):
+        
         rt = self._buff
         bg_size = self.bg.virtualSize
         for x in range(bg_size.X):
@@ -575,9 +577,16 @@ class BaeTermDrawPipeline:
         # draw bg on virtual buffer
         self.drawBackground()
         # draw actors on virutal buffer
+        
         self.drawPrimitiveOnBg(delta)
+        
         # encode buffers and submit draw
-        self.encodeRT()
+        dbg_time = BaeshadeUtil.Stopwatch()
+
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.encodeRT)
+
+        self.perfX = dbg_time.stop()
 
 
     def encodeRT(self,delta=0.0):

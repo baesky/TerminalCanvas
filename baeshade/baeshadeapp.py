@@ -22,7 +22,7 @@ class BaeKeyboard:
 class BaeApp:
     def __init__(self,render:BaeTermDrawPipeline = None,tick:Callable[[float],None]=None):
         
-        self._FixedFps = 10
+        self._FixedFps = 24
         self._displayRate = 1.0/self._FixedFps
         self._bExit = False
         self._tick = self.__tick if tick is None else tick
@@ -70,11 +70,11 @@ class BaeApp:
         waitTimeSec = max(0.0,self._displayRate - delta)
         delayTime = waitTimeSec
         if delayTime > 0.005:
-            time.sleep(delayTime - 0.002)
+            asyncio.sleep(delayTime - 0.002)
             delayTime -= self._frameTimer.last()
         
         while delayTime > 0:
-            time.sleep(0)
+            asyncio.sleep(0.002)
             delayTime -= self._frameTimer.last()
 
         tickPerf = self._tickTimer.reset()

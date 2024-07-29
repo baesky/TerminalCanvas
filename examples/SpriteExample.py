@@ -53,7 +53,7 @@ actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
 bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
 
 goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
-
+goblin2 = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
 ground = extractResourceTile(bg_path,192,64)
 
 # Create a RT to draw
@@ -63,6 +63,7 @@ RT = bs.BaeBuffer(192,64,colrMode.Color24Bits)
 drawPipe = bs.BaeTermDrawPipeline(RT)
 drawPipe.addBackGround(ground)
 drawPipe.addPrimtive(goblin)
+#drawPipe.addPrimtive(goblin2)
 acc = 0
 
 def gameTick(delta:float):
@@ -71,11 +72,9 @@ def gameTick(delta:float):
     v = (math.sin(acc)+1.0)*0.5
     v *= 0.5
     goblin.setPos(100*v,0)
+    #goblin2.setPos(80*v, 3)
     
 
 myApp = bapp(render=drawPipe,tick=gameTick)
 
-#myApp.run()
-drawPipe.clearScene(vec3(0,0,0))
-drawPipe.drawSprite(100,20, goblin.seq(0))
-drawPipe.encodeRT()
+myApp.run()

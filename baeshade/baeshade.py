@@ -167,7 +167,7 @@ class BaeColorMode:
         True-color
         """
         return '24-bit'
-    
+
 class BaeBuffer:
     """
     virtual buffer for drawing
@@ -383,12 +383,16 @@ class BaeSprite():
 
 class BaeTermDrawPipeline:
     def __init__(self, 
-                 buf:BaeBuffer = None, 
+                 bufDesc,
+                 bufNum:int = 2, # double buffer
                  debug = False):
         """
-        buf: render target
+        bufDesc: {'width','height','colorMode'}
         """
-        self._buff:BaeBuffer = None
+        self._buff = None
+        self._buffCount = bufNum
+        self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc['colorMode'])] * bufNum
+        self._frameCounter = 0
         self._enableDebug = debug
         self._perfStrFlush = 0
         self.perfX = 0.0
@@ -399,7 +403,7 @@ class BaeTermDrawPipeline:
         self._backgroundCache:str = None
         self.bg = None
 
-        self.bindRenderTaret(buf, True)
+        self.bindRenderTaret(self._backbuffer[0], True)
 
     @property
     def isExclusiveMode(self):
@@ -439,6 +443,10 @@ class BaeTermDrawPipeline:
         BaeshadeUtil.showCursor(bExclusive == False)
         if bExclusive == False:
             BaeshadeUtil.resetCursorPos()
+
+    def getBackBuffer(self):
+        idx = self._frameCounter % self._buffCount
+        return self._backbuffer[idx]
 
     def bindRenderTaret(self, buf : BaeBuffer, bNeedInvalidBuffer:bool = False):
         """
@@ -566,11 +574,13 @@ class BaeTermDrawPipeline:
         """
         output backbuffer to terminal
         """
-    
+        self._frameCounter += 1
         self._perfStrFlush = 0
         
         if self.isExclusiveMode is True:
             BaeshadeUtil.resetCursorPos()
+
+        self.bindRenderTaret(self.getBackBuffer())
 
         # draw bg on virtual buffer
         self.drawBackground()
@@ -585,7 +595,6 @@ class BaeTermDrawPipeline:
         await loop.run_in_executor(None, self.encodeRT)
         
         self.perfX = dbg_time.stop()
-
 
     def encodeRT(self,delta=0.0):
         if self._buff.isValid is False:

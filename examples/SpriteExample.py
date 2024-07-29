@@ -57,10 +57,12 @@ goblin2 = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
 ground = extractResourceTile(bg_path,192,64)
 
 # Create a RT to draw
-RT = bs.BaeBuffer(192,64,colrMode.Color24Bits)
+#RT = bs.BaeBuffer(192,64,colrMode.Color24Bits)
+
+RTDesc = {'width':192,'height':64,'colorMode':colrMode.Color24Bits}
 
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline(RT)
+drawPipe = bs.BaeTermDrawPipeline(RTDesc)
 drawPipe.addBackGround(ground)
 drawPipe.addPrimtive(goblin)
 drawPipe.addPrimtive(goblin2)

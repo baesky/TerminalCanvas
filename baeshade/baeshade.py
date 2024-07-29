@@ -1,8 +1,6 @@
 import os
 import datetime
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from time import sleep
 from .baeshademath import BaeVec2d
 from .baeshademath import BaeVec3d
 from .baeshademath import BaeMathUtil
@@ -585,7 +583,7 @@ class BaeTermDrawPipeline:
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.encodeRT)
-
+        
         self.perfX = dbg_time.stop()
 
 

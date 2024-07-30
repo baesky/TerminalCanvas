@@ -1,6 +1,8 @@
 import os
 import datetime
 import asyncio
+import multiprocessing
+import queue
 from .baeshademath import BaeVec2d
 from .baeshademath import BaeVec3d
 from .baeshademath import BaeMathUtil
@@ -384,7 +386,7 @@ class BaeSprite():
 class BaeTermDrawPipeline:
     def __init__(self, 
                  bufDesc,
-                 bufNum:int = 2, # double buffer
+                 bufNum:int = 3, # triple buffer
                  debug = False):
         """
         bufDesc: {'width','height','colorMode'}
@@ -392,18 +394,31 @@ class BaeTermDrawPipeline:
         self._buff = None
         self._buffCount = bufNum
         self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc['colorMode'])] * bufNum
+        self._rtQueue = multiprocessing.Manager().Queue(maxsize=bufNum)
         self._frameCounter = 0
         self._enableDebug = debug
         self._perfStrFlush = 0
         self.perfX = 0.0
         self._screenMode = False
         self._primList = [BaeSprite]
-
-
         self._backgroundCache:str = None
         self.bg = None
 
+
+        mgr = multiprocessing.Manager()
+        self.sharedData = mgr.dict()
+        self.sharedData['rtQueue'] = self._rtQueue
+        self.sharedData['encode'] = self.encodeRTDirect
+        self.sharedData['bExclusive'] = self.isExclusiveMode
+        self.encodeWorker = multiprocessing.Process(target=self.display, args=(self.sharedData,))
+        self.encodeWorker.start()
+
         self.bindRenderTaret(self._backbuffer[0], True)
+
+    def shutDown(self):
+        if self.encodeWorker is not None:
+            self.encodeWorker.terminate()
+            self.encodeWorker.join()
 
     @property
     def isExclusiveMode(self):
@@ -444,6 +459,16 @@ class BaeTermDrawPipeline:
         if bExclusive == False:
             BaeshadeUtil.resetCursorPos()
 
+    def display(self,inst):
+        while True:
+            encode = inst['rtQueue'].get()
+            if inst['bExclusive'] is True:
+                BaeshadeUtil.resetCursorPos()
+            inst['encode'](encode)
+
+    def submitRT(self, encodedData):
+        self._rtQueue.put(encodedData)
+
     def getBackBuffer(self):
         idx = self._frameCounter % self._buffCount
         return self._backbuffer[idx]
@@ -456,8 +481,9 @@ class BaeTermDrawPipeline:
 
     def __flush(self, buffstr):
         #print(buffstr,flush=False)
-        BaeshadeUtil.output(buffstr)
-        self._perfStrFlush += len(buffstr)
+        if buffstr is not None:
+            BaeshadeUtil.output(buffstr)
+            self._perfStrFlush += len(buffstr)
 
     def addBackGround(self, prim:BaeSprite):
         bmp = prim.seq(0)
@@ -532,7 +558,6 @@ class BaeTermDrawPipeline:
                             renderTarget.fillAt(round(pos.X + x), round(pos.Y + y),col)
 
 
-
     def drawSprite(self, x:int,y:int,src:BaeBuffer):
 
         dirtRow = src.getDirtRow()
@@ -561,14 +586,6 @@ class BaeTermDrawPipeline:
                      for xpos,lenth in rowSets:
                         for x in range(lenth):
                             self.drawPixel(xpos+x, idx*2, bmp)
-                        
-
-    
-    async def presentEX(self, delta=0.0):
-        # draw per primitve, get dirt rect list
-
-        # draw bg where not dirt
-        pass
 
     async def present(self, delta=0.0):
         """
@@ -576,10 +593,8 @@ class BaeTermDrawPipeline:
         """
         self._frameCounter += 1
         self._perfStrFlush = 0
-        
-        if self.isExclusiveMode is True:
-            BaeshadeUtil.resetCursorPos()
 
+        # bind current working backbuffer
         self.bindRenderTaret(self.getBackBuffer())
 
         # draw bg on virtual buffer
@@ -591,9 +606,9 @@ class BaeTermDrawPipeline:
         # encode buffers and submit draw
         dbg_time = BaeshadeUtil.Stopwatch()
 
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self.encodeRT)
-        
+        #if queue is full, wait here
+        self.submitRT(self.bg.getEncodeBuffer())
+
         self.perfX = dbg_time.stop()
 
     def encodeRT(self,delta=0.0):
@@ -601,6 +616,9 @@ class BaeTermDrawPipeline:
             self.__flush(self._buff.getEncodeBuffer())            
         else:
             self.__flush(self._buff._cache)
+
+    def encodeRTDirect(self,buff):
+        self.__flush(buff)            
 
     def clearScene(self,clrColor:BaeVec3d):
         """

@@ -607,7 +607,7 @@ class BaeTermDrawPipeline:
         dbg_time = BaeshadeUtil.Stopwatch()
 
         #if queue is full, wait here
-        self.submitRT(self.bg.getEncodeBuffer())
+        self.submitRT(self.getBackBuffer().getEncodeBuffer())
 
         self.perfX = dbg_time.stop()
 

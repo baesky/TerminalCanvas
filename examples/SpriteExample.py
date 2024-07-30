@@ -47,27 +47,6 @@ def extractResourceTile(path,w,h)->sprite:
     
     return actor
 
-
-#read a pic
-actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
-bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
-
-goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
-goblin2 = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
-ground = extractResourceTile(bg_path,192,64)
-
-# Create a RT to draw
-#RT = bs.BaeBuffer(192,64,colrMode.Color24Bits)
-
-RTDesc = {'width':192,'height':64,'colorMode':colrMode.Color24Bits}
-
-# config pipeline
-drawPipe = bs.BaeTermDrawPipeline(RTDesc)
-drawPipe.addBackGround(ground)
-drawPipe.addPrimtive(goblin)
-drawPipe.addPrimtive(goblin2)
-acc = 0
-
 def gameTick(delta:float):
     global acc
     acc = acc + delta
@@ -76,7 +55,26 @@ def gameTick(delta:float):
     goblin.setPos(100*v,0)
     goblin2.setPos(80*v, 3)
     
+if __name__ == '__main__':
 
-myApp = bapp(render=drawPipe,tick=gameTick)
+    #read a pic
+    actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
+    bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
 
-myApp.run()
+    goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
+    goblin2 = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
+    ground = extractResourceTile(bg_path,192,64)
+
+    # Create a RT to draw
+    RTDesc = {'width':192,'height':64,'colorMode':colrMode.Color24Bits}
+
+    # config pipeline
+    drawPipe = bs.BaeTermDrawPipeline(RTDesc)
+    drawPipe.addBackGround(ground)
+    drawPipe.addPrimtive(goblin)
+    drawPipe.addPrimtive(goblin2)
+    acc = 0
+
+    myApp = bapp(render=drawPipe,tick=gameTick)
+
+    myApp.run()

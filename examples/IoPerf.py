@@ -43,7 +43,7 @@ bufflen = 261851
 large_buff = ['a'] * bufflen
 large_buff = ''.join(large_buff)
 perf2 = util.Stopwatch()
-testNum = 10
+testNum = 20
 calcTimes = [0]*testNum
 
 #sys.stdout.reconfigure(line_buffering=False)
@@ -57,15 +57,17 @@ sys.stdout = buffered_stdout
 for x in range(testNum):
     perf2.reset()
     pice = 700
-    interval = 2048#bufflen // pice
+    interval = 8192#bufflen // pice
     for i in range(0, bufflen, interval):
-        #sys.stdout.buffer.write(large_buff[i:i+interval].encode('UTF-8'))
-        sys.stdout.write(large_buff[i:i+interval])
+        sys.stdout.buffer.write(large_buff[i:i+interval].encode('UTF-8'))
+        #sys.stdout.write(large_buff[i:i+interval])
         #os.write(1,large_buff[i:i+interval])
+        #sys.stdout.flush()
     
     calcTimes[x] = perf2.stop()*1000
 
 #sys.stdout.buffer.write('test writing')
-
+print(f'io buffersize: {io.DEFAULT_BUFFER_SIZE}')
 print(f'total: {testNum}')
-print(f'time: {calcTimes}')
+#print(f'time: {calcTimes}')
+[print(f'{x}: {calcTimes[x]:.2f}') for x in range(testNum)]

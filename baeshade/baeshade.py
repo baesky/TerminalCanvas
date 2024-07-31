@@ -401,6 +401,8 @@ class BaeTermDrawPipeline:
         self._buffCount = bufNum
         self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc['colorMode'])] * bufNum
         self._rtQueue = multiprocessing.Manager().Queue(maxsize=bufNum)
+        self._perfData = multiprocessing.Manager().Queue(maxsize=bufNum)
+
         self._frameCounter = 0
         self._enableDebug = debug
         self._perfStrFlush = 0
@@ -415,9 +417,7 @@ class BaeTermDrawPipeline:
         mgr = multiprocessing.Manager()
         self.sharedData = mgr.dict()
         self.sharedData['rtQueue'] = self._rtQueue
-        self.sharedData['encode'] = self.encodeRTDirect
         self.sharedData['bExclusive'] = self.isExclusiveMode
-        self._perfData = multiprocessing.Manager().Queue(maxsize=bufNum)
         self.sharedData['perfData'] = self._perfData
         self.encodeWorker = multiprocessing.Process(target=self.display, args=(self.sharedData,))
         self.encodeWorker.start()
@@ -473,10 +473,10 @@ class BaeTermDrawPipeline:
             encode = inst['rtQueue'].get()
             if inst['bExclusive'] is True:
                 BaeshadeUtil.resetCursorPos()
-            inst['encode'](encode)
+            self.__flush(encode)
 
             data = inst['perfData'].get()
-            self.drawStyleText(1, 1, f'fps:{data.expectFPS}/{1000 // data.frameTime}, Frame:{data.frameTime:.2f}, Logic:{data.logicTickTime:.2f}, Draw:{data.drawTime:.2f}, Encoding:{data.encodingRTTime:.2f}\n',ColorPallette4bit.blue,ColorPallette4bit.black_bg)
+            self.drawStyleText(1, 1, f'fps:{data.expectFPS}/{1000 // data.frameTime}, Frame:{data.frameTime:.2f}, Logic:{data.logicTickTime:.2f}, Draw:{data.drawTime:.2f}, Encoding:{data.encodingRTTime:.2f}, bandwidth:{self._perfStrFlush:,}\n',ColorPallette4bit.blue,ColorPallette4bit.black_bg)
 
     def submitRT(self, encodedData):
         try:

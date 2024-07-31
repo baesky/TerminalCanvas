@@ -101,7 +101,7 @@ class BaeApp:
             delayTime -= self._tickTimer.stop()
 
         self._tickTimer.reset()
-        self._tick(delta + waitTimeSec)
+        await self._tick(delta + waitTimeSec)
         self._perfData.logicTickTime = self._tickTimer.stop() * 1000
 
         self._tickTimer.reset()

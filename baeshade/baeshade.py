@@ -404,7 +404,8 @@ class BaeTermDrawPipeline:
         self._frameCounter = 0
         self._enableDebug = debug
         self._perfStrFlush = 0
-        self.perfX = 0.0
+        self._perfSubmitRT = 0
+        self._perfDrawScene = 0
         self._screenMode = False
         self._primList = [BaeSprite]
         self._backgroundCache:str = None
@@ -416,6 +417,8 @@ class BaeTermDrawPipeline:
         self.sharedData['rtQueue'] = self._rtQueue
         self.sharedData['encode'] = self.encodeRTDirect
         self.sharedData['bExclusive'] = self.isExclusiveMode
+        self._perfData = multiprocessing.Manager().Queue(maxsize=bufNum)
+        self.sharedData['perfData'] = self._perfData
         self.encodeWorker = multiprocessing.Process(target=self.display, args=(self.sharedData,))
         self.encodeWorker.start()
 
@@ -472,9 +475,18 @@ class BaeTermDrawPipeline:
                 BaeshadeUtil.resetCursorPos()
             inst['encode'](encode)
 
+            data = inst['perfData'].get()
+            self.drawStyleText(1, 1, f'fps:{data.expectFPS}/{1000 // data.frameTime}, Frame:{data.frameTime:.2f}, Logic:{data.logicTickTime:.2f}, Draw:{data.drawTime:.2f}, Encoding:{data.encodingRTTime:.2f}\n',ColorPallette4bit.blue,ColorPallette4bit.black_bg)
+
     def submitRT(self, encodedData):
         try:
             self._rtQueue.put_nowait(encodedData)
+        except queue.Full:
+            pass
+    
+    def submitPerfData(self, perfData):
+        try:
+            self._perfData.put_nowait(perfData)
         except queue.Full:
             pass
 
@@ -603,22 +615,25 @@ class BaeTermDrawPipeline:
         self._frameCounter += 1
         self._perfStrFlush = 0
 
+        perfWatch = BaeshadeUtil.Stopwatch()
+
         # bind current working backbuffer
         self.bindRenderTaret(self.getBackBuffer())
 
+        # draw primitives
         # draw bg on virtual buffer
         self.drawBackground()
         # draw actors on virutal buffer
         
         self.drawPrimitiveOnBg(delta)
         
-        # encode buffers and submit draw
-        dbg_time = BaeshadeUtil.Stopwatch()
+        self._perfDrawScene = perfWatch.stop()
+        perfWatch.reset()
 
+        # encode buffers and submit draw
         #if queue is full, wait here
         self.submitRT(self.getBackBuffer().getEncodeBuffer())
-
-        self.perfX = dbg_time.stop()
+        self._perfSubmitRT = perfWatch.stop()
 
     def encodeRT(self,delta=0.0):
         if self._buff.isValid is False:

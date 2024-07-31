@@ -20,6 +20,15 @@ class BaeKeyboard:
     def KeyRelease(self):
         return self._keyrelease
 
+class BaePerfData:
+    def __init__(self):
+        self.logicTickTime = 0 # logic tick elapsed time
+        self.encodingRTTime = 0 # encode times
+        self.drawTime = 0 #scene drawing time, include encoding RT Time
+        self.expectFPS = 0 # expected FPS
+        self.frameTime = 0 # single frame delta time
+
+
 class BaeApp:
     def __init__(self,render:BaeTermDrawPipeline = None,tick:Callable[[float],None]=None):
         
@@ -29,7 +38,9 @@ class BaeApp:
         self._tick = self.__tick if tick is None else tick
         self._frameTimer = None
         self._tickTimer = None
-        self._tickPerf = 0
+        
+        self._perfData = BaePerfData()
+        self._perfData.expectFPS = self._FixedFps
 
         self.attachRender(render)
 
@@ -59,6 +70,9 @@ class BaeApp:
         self._frameTimer = BaeshadeUtil.Stopwatch()
         self._tickTimer = BaeshadeUtil.Stopwatch()
 
+        #debug use
+        self._tempPerf = BaeshadeUtil.Stopwatch()
+
     def __HandleCtrlZ(self,sig,frame):
         print('pressed ctrl+z')
         self.requestExit()
@@ -69,7 +83,10 @@ class BaeApp:
 
 
     async def __Loop(self):
+        
         delta = self._frameTimer.last()
+        self._perfData.frameTime = delta * 1000 # last frame time
+
         waitTimeSec = max(0.0,self._displayRate - delta)
         delayTime = waitTimeSec
         # if delayTime > 0.005:
@@ -82,19 +99,19 @@ class BaeApp:
             await asyncio.sleep(0.001)
             delayTime -= self._tickTimer.stop()
 
+        
+
         self._tickTimer.reset()
         self._tick(delta + waitTimeSec)
-        self._tickPerf = self._tickTimer.stop()
+        self._perfData.logicTickTime = self._tickTimer.stop() * 1000
 
         self._tickTimer.reset()
         await self._renderPipe.present(delta)
-        drawPerf = self._tickTimer.stop()
+        self._perfData.drawTime = self._tickTimer.stop() * 1000
 
         # draw perf stat
-        #self._renderPipe.drawText(1,self._renderPipe.backbufferHeight//2-1, 'tick: %.2f ms, draw: %.2f ms bg: %.2f ms'%(self._tickPerf*1000.0, drawPerf*1000.0, self._renderPipe.perfX*1000.0))
-        #self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2,'fixed fps:%d, bandwidth:%s' % (self.LimitFPS , f"{self._renderPipe.strPerf:,}"))
-        self._renderPipe.drawText(1,1, 'tick: %.2f ms, draw: %.2f ms bg: %.2f ms\n'%(self._tickPerf*1000.0, drawPerf*1000.0, self._renderPipe.perfX*1000.0))
-        self._renderPipe.drawStyleText(1, 2,'fixed fps:%d, delta:%.2f ms bandwidth:%s\n' % (self.LimitFPS , delta*1000.0,f"{self._renderPipe.strPerf:,}"),ColorPallette4bit.blue,ColorPallette4bit.black_bg)
+        self._renderPipe.submitPerfData(self._perfData)
+
 
     async def __LoopWrapper(self):
         while self._bExit is False:

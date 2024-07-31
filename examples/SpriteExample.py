@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # config pipeline
     drawPipe = bs.BaeTermDrawPipeline(RTDesc)
-    drawPipe.addBackGround(ground)
+    drawPipe.addPrimtive(ground)
     drawPipe.addPrimtive(goblin)
     drawPipe.addPrimtive(goblin2)
     acc = 0

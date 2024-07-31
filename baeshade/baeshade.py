@@ -447,21 +447,21 @@ class BaeFrameCounter:
 class BaeTermDrawPipeline:
     def __init__(self, 
                  bufDesc,
-                 bufNum:int = 3 # triple buffer
+                 bufNum:int = 3, # triple buffer
+                 bStrict = False # true means every single frame must be drawn
                  ):
         """
         bufDesc: {'width','height','colorMode'}
         """
         self._buff = None
         self._buffCount = bufNum
+        self._strictMode = bStrict
         self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc['colorMode'])] * bufNum
 
         self._frameCounter = BaeFrameCounter()
 
         self._screenMode = False
         self._primList = [BaeSprite]
-        self._backgroundCache:str = None
-        self.bg = None
 
         self._rtQueue = BaeWorkQueue(bufNum)
         self._perfData = BaeWorkQueue(bufNum)
@@ -520,14 +520,21 @@ class BaeTermDrawPipeline:
         submit data to renering worker, if queue is full mean the term is busy, drop the data
         """
         try:
-            self._rtQueue.getQueue().put_nowait(encodedData)
-        except queue.Full:
+            if self._strictMode: 
+                self._rtQueue.getQueue.put(encodedData)
+            else:
+                self._rtQueue.getQueue().put_nowait(encodedData)
+        except (queue.Full, queue.Empty):
             pass
+
     
     def submitPerfData(self, perfData):
         try:
-            self._perfData.getQueue().put_nowait(perfData)
-        except queue.Full:
+            if self._strictMode: 
+                self._perfData.getQueue().put(perfData)
+            else:
+                self._perfData.getQueue().put_nowait(perfData)
+        except (queue.Full, queue.Empty):
             pass
 
     def getBackBuffer(self):
@@ -545,11 +552,6 @@ class BaeTermDrawPipeline:
         if buffstr is not None:
             BaeshadeUtil.output(buffstr)
 
-    def addBackGround(self, prim:BaeSprite):
-        bmp = prim.seq(0)
-        self._backgroundCache = bmp.getEncodeBuffer()
-        self.bg = bmp
-
     def addPrimtive(self, prim:BaeSprite):
         self._primList.append(prim)
 
@@ -557,17 +559,8 @@ class BaeTermDrawPipeline:
     def PrimitivesNum(self):
         return len(self._primList)
 
-    def _drawBackground(self):
-        
-        rt = self._buff
-        if self.bg is not None:
-            bg_size = self.bg.virtualSize
-            for x in range(bg_size.X):
-                for y in range(bg_size.Y):
-                    rt.fillAt(x,y, self.bg.getPixel(x,y))
 
-
-    def _drawPrimitiveOnBg(self, delta:float):
+    def _drawPrimitive(self, delta:float):
         #_buff as Backgournd, not need update
         renderTarget = self._buff
         rtH = renderTarget.virtualSize.Y
@@ -630,14 +623,12 @@ class BaeTermDrawPipeline:
         self.bindRenderTaret(self.getBackBuffer())
 
         # draw primitives
-        # draw bg on virtual buffer
-        self._drawBackground()
-        # draw actors on virutal buffer
-        
-        self._drawPrimitiveOnBg(delta)
-        
+        self._drawPrimitive(delta)
         self.workerPayload.update('_perfDrawScene', perfWatch.stop())
         
+
+        # gather postprocess
+
         perfWatch.reset()
         # encode buffers and submit draw
         #if queue is full, wait here

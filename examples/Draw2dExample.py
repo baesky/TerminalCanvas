@@ -2,15 +2,16 @@
 
 import baeshade as bs
 
+colrMode = bs.BaeColorMode
 util = bs.BaeshadeUtil
 vec2 = bs.BaeVec2d
 vec3 = bs.BaeVec3d
 sprite = bs.BaeSprite
 bgcolor = vec3(128,128,128)
 # set a buffer
-buf = bs.BaeBuffer(42,28, mode=bs.BaeColorMode.Color24Bits)
+RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline(buf=buf,debug=False)
+drawPipe = bs.BaeTermDrawPipeline(RT)
 
 #clear canvas
 drawPipe.clearScene(bgcolor)

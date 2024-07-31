@@ -3,6 +3,7 @@
 import baeshade as bs
 import math
 
+colrMode = bs.BaeColorMode
 Ray = bs.BaeRay
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
@@ -93,11 +94,12 @@ def pixelShader(x,y,b):
 
 # set a buffer
 buf = bs.BaeBuffer(42,28, mode=bs.BaeColorMode.Color24Bits)
+RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
 
 buf.compute(pixelShader)
-
+buf.getEncodeBuffer()
 # config pipeline
-drawPipe = bs.BaeTermDrawPipeline(buf=buf,debug=True)
+drawPipe = bs.BaeTermDrawPipeline(RT,debug=True)
 
 # run one frame
 drawPipe.encodeRT()

@@ -389,45 +389,99 @@ class BaeSprite():
     def seqNum(self):
         return self._seqLen
 
+class BaeEncodeWorker():
+    def __init__(self, func=None, args=()):
+        self._worker = multiprocessing.Process(target=func, args=args)
+    def run(self):
+        self._worker.start()
+
+    def stop(self):
+        self._worker.terminate()
+        self._worker.join()
+    
+class BaeWorkerPayload():
+    def __init__(self, payload):
+        self._payload = multiprocessing.Manager().dict()
+        self._payload.update(payload)
+
+    def getPayload(self):
+        return self._payload
+    
+    def update(self, key, value):
+        self._payload[key] = value
+
+class BaeWorkQueue():
+    def __init__(self, workSize:3):
+        self._queue = multiprocessing.Manager().Queue(workSize)
+
+    def getQueue(self):
+        return self._queue
+
+    
+def BaeEncodingTask(payload):
+    while True:
+        encode = payload['rtQueue'].get()
+        if payload['bExclusive'] is True:
+            BaeshadeUtil.resetCursorPos()
+        BaeTermDrawPipeline.draw(encode)
+
+        perfStrFlush = len(encode)
+        perfData = payload['perfData'].get()
+        BaeTermDrawPipeline.drawStyleText(1, 1, f'fps:{perfData.expectFPS}/{1000 // perfData.frameTime}, Frame:{perfData.frameTime:.2f}, Logic:{perfData.logicTickTime:.2f},'
+                                          f' Draw:{perfData.drawTime:.2f}, Encoding:{payload["_perfSubmitRT"]:.2f}, bandwidth:{perfStrFlush:,} \n'
+                                          ,ColorPallette4bit.blue,ColorPallette4bit.black_bg)
+        
+class BaeFrameCounter:
+    def __init__(self):
+        self._counter = 0
+
+    def Increment(self):
+        if self._counter > 9999999:
+            self._counter = 0
+        else:
+            self._counter += 1
+    def frame(self):
+        return self._counter
+
+
 class BaeTermDrawPipeline:
     def __init__(self, 
                  bufDesc,
-                 bufNum:int = 3, # triple buffer
-                 debug = False):
+                 bufNum:int = 3 # triple buffer
+                 ):
         """
         bufDesc: {'width','height','colorMode'}
         """
         self._buff = None
         self._buffCount = bufNum
         self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc['colorMode'])] * bufNum
-        self._rtQueue = multiprocessing.Manager().Queue(maxsize=bufNum)
-        self._perfData = multiprocessing.Manager().Queue(maxsize=bufNum)
 
-        self._frameCounter = 0
-        self._enableDebug = debug
-        self._perfStrFlush = 0
-        self._perfSubmitRT = 0
-        self._perfDrawScene = 0
+        self._frameCounter = BaeFrameCounter()
+
         self._screenMode = False
         self._primList = [BaeSprite]
         self._backgroundCache:str = None
         self.bg = None
 
+        self._rtQueue = BaeWorkQueue(bufNum)
+        self._perfData = BaeWorkQueue(bufNum)
+        payload = {
+            'rtQueue': self._rtQueue.getQueue(),
+            'bExclusive': self.isExclusiveMode,
+            'perfData': self._perfData.getQueue(),
+            '_perfSubmitRT': 0,
+            '_perfDrawScene': 0
+        }
+        self.workerPayload = BaeWorkerPayload(payload)
+        self.encodeWorker = BaeEncodeWorker(BaeEncodingTask, (self.workerPayload.getPayload(),))
+        self.encodeWorker.run()
 
-        mgr = multiprocessing.Manager()
-        self.sharedData = mgr.dict()
-        self.sharedData['rtQueue'] = self._rtQueue
-        self.sharedData['bExclusive'] = self.isExclusiveMode
-        self.sharedData['perfData'] = self._perfData
-        self.encodeWorker = multiprocessing.Process(target=self.display, args=(self.sharedData,))
-        self.encodeWorker.start()
-
+        #bind a default rt
         self.bindRenderTaret(self._backbuffer[0], True)
 
     def shutDown(self):
         if self.encodeWorker is not None:
-            self.encodeWorker.terminate()
-            self.encodeWorker.join()
+            self.encodeWorker.stop()
 
     @property
     def isExclusiveMode(self):
@@ -449,13 +503,6 @@ class BaeTermDrawPipeline:
     def colorMode(self):
         return self._buff.colorMode
 
-    @property
-    def strPerf(self)->int:
-        """
-        character to flush in one frame
-        """
-        return self._perfStrFlush
-
     def useExclusiveScreen(self,bExclusive:bool):
         """
         true enter alternative screen
@@ -468,30 +515,23 @@ class BaeTermDrawPipeline:
         if bExclusive == False:
             BaeshadeUtil.resetCursorPos()
 
-    def display(self,inst):
-        while True:
-            encode = inst['rtQueue'].get()
-            if inst['bExclusive'] is True:
-                BaeshadeUtil.resetCursorPos()
-            self.__flush(encode)
-
-            data = inst['perfData'].get()
-            self.drawStyleText(1, 1, f'fps:{data.expectFPS}/{1000 // data.frameTime}, Frame:{data.frameTime:.2f}, Logic:{data.logicTickTime:.2f}, Draw:{data.drawTime:.2f}, Encoding:{data.encodingRTTime:.2f}, bandwidth:{self._perfStrFlush:,}\n',ColorPallette4bit.blue,ColorPallette4bit.black_bg)
-
     def submitRT(self, encodedData):
+        """
+        submit data to renering worker, if queue is full mean the term is busy, drop the data
+        """
         try:
-            self._rtQueue.put_nowait(encodedData)
+            self._rtQueue.getQueue().put_nowait(encodedData)
         except queue.Full:
             pass
     
     def submitPerfData(self, perfData):
         try:
-            self._perfData.put_nowait(perfData)
+            self._perfData.getQueue().put_nowait(perfData)
         except queue.Full:
             pass
 
     def getBackBuffer(self):
-        idx = self._frameCounter % self._buffCount
+        idx = self._frameCounter.frame() % self._buffCount
         return self._backbuffer[idx]
 
     def bindRenderTaret(self, buf : BaeBuffer, bNeedInvalidBuffer:bool = False):
@@ -500,11 +540,10 @@ class BaeTermDrawPipeline:
         """
         self._buff = buf
 
-    def __flush(self, buffstr):
-        #print(buffstr,flush=False)
+    @staticmethod
+    def draw(buffstr:str)->None:
         if buffstr is not None:
             BaeshadeUtil.output(buffstr)
-            self._perfStrFlush += len(buffstr)
 
     def addBackGround(self, prim:BaeSprite):
         bmp = prim.seq(0)
@@ -518,45 +557,17 @@ class BaeTermDrawPipeline:
     def PrimitivesNum(self):
         return len(self._primList)
 
-    def __encodeDirtPixelsLine(self,x:int,y:int, buffstr:str,lx:int=0,ly:int=0):
-        #top-left corner pos is (1,1)
-        return '\x1b[%d;%dH%s'%((ly+y)//2 + 1,lx+x + 1,buffstr)
-
-    def drawBackground_Immeditately(self):
-        
-        if self._backgroundCache:
-            self.__flush(self._backgroundCache)
-
-    def drawBackground(self):
+    def _drawBackground(self):
         
         rt = self._buff
-        bg_size = self.bg.virtualSize
-        for x in range(bg_size.X):
-            for y in range(bg_size.Y):
-                rt.fillAt(x,y, self.bg.getPixel(x,y))
+        if self.bg is not None:
+            bg_size = self.bg.virtualSize
+            for x in range(bg_size.X):
+                for y in range(bg_size.Y):
+                    rt.fillAt(x,y, self.bg.getPixel(x,y))
 
-    def drawPrimitiveOnBg_Immediately(self, delta:float):
-        # draw dynamic primitives, not need really write to backbuffer
-        for p in self._primList:
-            #now only support sprite
-            if isinstance(p,BaeSprite):
-                
-                #get corresponding frame
-                bmp = p.playAtRate(delta)
-                #generate encode, don't need write to bg
-                pos = p.Pos
-                encode_buff = []
 
-                exRow = bmp.getEncodeBufferEx()
-
-                for offsetY, tuplist in enumerate(exRow):
-                    for enc in tuplist:
-                        x, s = enc
-                        encode_buff.append(self.__encodeDirtPixelsLine(x,offsetY*2,s,pos.X,pos.Y))
-
-                self.__flush(''.join(encode_buff))
-
-    def drawPrimitiveOnBg(self, delta:float):
+    def _drawPrimitiveOnBg(self, delta:float):
         #_buff as Backgournd, not need update
         renderTarget = self._buff
         rtH = renderTarget.virtualSize.Y
@@ -612,37 +623,34 @@ class BaeTermDrawPipeline:
         """
         output backbuffer to terminal
         """
-        self._frameCounter += 1
-        self._perfStrFlush = 0
+        self._frameCounter.Increment()
 
         perfWatch = BaeshadeUtil.Stopwatch()
-
         # bind current working backbuffer
         self.bindRenderTaret(self.getBackBuffer())
 
         # draw primitives
         # draw bg on virtual buffer
-        self.drawBackground()
+        self._drawBackground()
         # draw actors on virutal buffer
         
-        self.drawPrimitiveOnBg(delta)
+        self._drawPrimitiveOnBg(delta)
         
-        self._perfDrawScene = perfWatch.stop()
+        self.workerPayload.update('_perfDrawScene', perfWatch.stop())
+        
         perfWatch.reset()
-
         # encode buffers and submit draw
         #if queue is full, wait here
         self.submitRT(self.getBackBuffer().getEncodeBuffer())
-        self._perfSubmitRT = perfWatch.stop()
+        self.workerPayload.update('_perfSubmitRT', perfWatch.stop())
+
+
 
     def encodeRT(self,delta=0.0):
         if self._buff.isValid is False:
-            self.__flush(self._buff.getEncodeBuffer())            
+            BaeTermDrawPipeline.draw(self._buff.getEncodeBuffer())            
         else:
-            self.__flush(self._buff._cache)
-
-    def encodeRTDirect(self,buff):
-        self.__flush(buff)            
+            BaeTermDrawPipeline.draw(self._buff._cache)
 
     def clearScene(self,clrColor:BaeVec3d):
         """
@@ -656,17 +664,18 @@ class BaeTermDrawPipeline:
     def __clampInBuffer(self,pt:BaeVec2d):
         return BaeVec2d(BaeMathUtil.round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), BaeMathUtil.round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
-    def drawText(self, x:int,y:int, txt:str)->None:
-        # user responed for format like 'new line'
+    @staticmethod
+    def drawText(x:int,y:int, txt:str)->None:
         BaeshadeUtil.resetCursorPos(y,x)
         print(txt)
 
-    def drawStyleText(self, x:int, y:int, txt:str, fontColor, bgColor, style:BaeFontStyle = 0, bNeedRestStyle:bool = False):
+    @staticmethod
+    def drawStyleText(x:int, y:int, txt:str, fontColor, bgColor, style:BaeFontStyle = 0, bNeedRestStyle:bool = False):
         # user responed for format like 'new line'
         encode = BaeTermDraw.encodeTextStyle(fontColor, bgColor, style)
         buildStr = f'{encode}{txt}{BaeTermDraw.encodeResetToken() if bNeedRestStyle else ""}'
         BaeshadeUtil.resetCursorPos(y,x)
-        self.__flush(buildStr)
+        BaeTermDrawPipeline.draw(buildStr)
 
 
     def drawPixel(self,x:int,y:int,color:BaeVec3d)->None:

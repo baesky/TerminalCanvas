@@ -312,7 +312,7 @@ class BaeBuffer:
 
         return self._effectiveRows
 
-    def compute(self,kernel:Optional[Callable[[int,int, 'BaeBuffer'],BaeVec3d]]):
+    def compute(self,kernel:Optional[Callable[[int,int, BaeVec2d],BaeVec3d]]):
         """
         Run per pixel
         """

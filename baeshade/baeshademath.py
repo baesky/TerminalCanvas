@@ -143,6 +143,10 @@ class BaeMathUtil:
     @staticmethod
     def round(v:float)->int:
         return int(v)
+    
+    @staticmethod
+    def lerp(a,b,t):
+        return a + (b - a) * t
 
 class BaeBoundingBox2D:
     def __init__(self):

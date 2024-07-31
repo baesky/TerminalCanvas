@@ -92,14 +92,14 @@ def pixelShader(x,y,b):
 
     return output
 
-# set a buffer
-buf = bs.BaeBuffer(42,28, mode=bs.BaeColorMode.Color24Bits)
-RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
+if __name__ == '__main__':
+    # set a RT desc
+    RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
 
-buf.compute(pixelShader)
-buf.getEncodeBuffer()
-# config pipeline
-drawPipe = bs.BaeTermDrawPipeline(RT,debug=True)
+    # config pipeline
+    drawPipe = bs.BaeTermDrawPipeline(RT)
+    drawPipe.setShader(pixelShader)
 
-# run one frame
-drawPipe.encodeRT()
+    # config app
+    app = bs.BaeApp(drawPipe)
+    app.run()

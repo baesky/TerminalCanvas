@@ -428,7 +428,8 @@ def BaeEncodingTask(payload):
         perfStrFlush = len(encode)
         perfData = payload['perfData'].get()
         BaeTermDrawPipeline.drawStyleText(1, 1, f'fps:{perfData.expectFPS}/{1000 // perfData.frameTime}, Frame:{perfData.frameTime:.2f}, Logic:{perfData.logicTickTime:.2f},'
-                                          f' Draw:{perfData.drawTime:.2f}, Encoding:{payload["_perfSubmitRT"]:.2f}, bandwidth:{perfStrFlush:,} \n'
+                                          f' Draw:{perfData.drawTime:.2f}, Encoding:{payload["_perfSubmitRT"]*1000:.2f}, bandwidth:{perfStrFlush:,}'
+                                          f' cu:{payload["_perfPostProcess"]*1000:.2f}\n'
                                           ,ColorPallette4bit.blue,ColorPallette4bit.black_bg)
         
 class BaeFrameCounter:
@@ -476,12 +477,22 @@ class BaeTermDrawPipeline:
         self.encodeWorker = BaeEncodeWorker(BaeEncodingTask, (self.workerPayload.getPayload(),))
         self.encodeWorker.run()
 
+        #hack for shader compute
+        self._shader = None
+
         #bind a default rt
         self.bindRenderTaret(self._backbuffer[0], True)
+
+
+    def __del__(self):
+        self.shutDown()
 
     def shutDown(self):
         if self.encodeWorker is not None:
             self.encodeWorker.stop()
+
+    def setShader(self, shader):
+        self._shader = shader
 
     @property
     def isExclusiveMode(self):
@@ -612,6 +623,10 @@ class BaeTermDrawPipeline:
                         for x in range(lenth):
                             self.drawPixel(xpos+x, idx*2, bmp)
 
+    def __postprocess(self):
+        if self._shader is not None:
+            self.getBackBuffer().compute(self._shader)
+
     async def present(self, delta=0.0):
         """
         output backbuffer to terminal
@@ -626,8 +641,10 @@ class BaeTermDrawPipeline:
         self._drawPrimitive(delta)
         self.workerPayload.update('_perfDrawScene', perfWatch.stop())
         
-
-        # gather postprocess
+        # gather postprocess working
+        perfWatch.reset()
+        self.__postprocess()
+        self.workerPayload.update('_perfPostProcess', perfWatch.stop())
 
         perfWatch.reset()
         # encode buffers and submit draw

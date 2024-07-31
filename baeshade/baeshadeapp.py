@@ -47,6 +47,7 @@ class BaeApp:
         #handle ctrl+z
         signal.signal(signal.SIGTSTP, self.__HandleCtrlZ)
 
+
     async def __tick(self,delta:float):
         pass
 
@@ -71,7 +72,7 @@ class BaeApp:
         self._tickTimer = BaeshadeUtil.Stopwatch()
 
         #debug use
-        self._tempPerf = BaeshadeUtil.Stopwatch()
+        #self._tempPerf = BaeshadeUtil.Stopwatch()
 
     def __HandleCtrlZ(self,sig,frame):
         print('pressed ctrl+z')
@@ -99,8 +100,6 @@ class BaeApp:
             await asyncio.sleep(0.001)
             delayTime -= self._tickTimer.stop()
 
-        
-
         self._tickTimer.reset()
         self._tick(delta + waitTimeSec)
         self._perfData.logicTickTime = self._tickTimer.stop() * 1000
@@ -116,7 +115,6 @@ class BaeApp:
     async def __LoopWrapper(self):
         while self._bExit is False:
             await self.__Loop()
-            #await asyncio.sleep(0.001)
     
     def __initLoop(self):
         loop = asyncio.new_event_loop()

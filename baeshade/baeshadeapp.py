@@ -1,4 +1,4 @@
-from .baeshade import BaeTermDrawPipeline
+from .baeshade import BaeTermDrawPipeline, ColorPallette4bit
 from .baeshadeutil import BaeshadeUtil
 import time
 from typing import Optional, Callable
@@ -72,34 +72,34 @@ class BaeApp:
         delta = self._frameTimer.last()
         waitTimeSec = max(0.0,self._displayRate - delta)
         delayTime = waitTimeSec
-        if delayTime > 0.005:
-            self._tickTimer.reset()
-            await asyncio.sleep(delayTime - 0.001)
-            delayTime -= self._tickTimer.stop()
+        # if delayTime > 0.005:
+        #     self._tickTimer.reset()
+        #     await asyncio.sleep(delayTime - 0.001)
+        #     delayTime -= self._tickTimer.stop()
         
         while delayTime > 0:
             self._tickTimer.reset()
             await asyncio.sleep(0.001)
             delayTime -= self._tickTimer.stop()
 
-        tickPerf = self._tickTimer.reset()
+        self._tickTimer.reset()
         self._tick(delta + waitTimeSec)
         self._tickPerf = self._tickTimer.stop()
 
-        drawPerf = self._tickTimer.reset()
+        self._tickTimer.reset()
         await self._renderPipe.present(delta)
         drawPerf = self._tickTimer.stop()
 
         # draw perf stat
         #self._renderPipe.drawText(1,self._renderPipe.backbufferHeight//2-1, 'tick: %.2f ms, draw: %.2f ms bg: %.2f ms'%(self._tickPerf*1000.0, drawPerf*1000.0, self._renderPipe.perfX*1000.0))
         #self._renderPipe.drawText(1, self._renderPipe.backbufferHeight//2,'fixed fps:%d, bandwidth:%s' % (self.LimitFPS , f"{self._renderPipe.strPerf:,}"))
-        self._renderPipe.drawText(1,1, 'tick: %.2f ms, draw: %.2f ms bg: %.2f ms'%(self._tickPerf*1000.0, drawPerf*1000.0, self._renderPipe.perfX*1000.0))
-        self._renderPipe.drawText(1, 2,'fixed fps:%d, delta:%.2f ms bandwidth:%s' % (self.LimitFPS , delta*1000.0,f"{self._renderPipe.strPerf:,}"))
+        self._renderPipe.drawText(1,1, 'tick: %.2f ms, draw: %.2f ms bg: %.2f ms\n'%(self._tickPerf*1000.0, drawPerf*1000.0, self._renderPipe.perfX*1000.0))
+        self._renderPipe.drawStyleText(1, 2,'fixed fps:%d, delta:%.2f ms bandwidth:%s\n' % (self.LimitFPS , delta*1000.0,f"{self._renderPipe.strPerf:,}"),ColorPallette4bit.blue,ColorPallette4bit.black_bg)
 
     async def __LoopWrapper(self):
         while self._bExit is False:
             await self.__Loop()
-            await asyncio.sleep(0.001)
+            #await asyncio.sleep(0.001)
     
     def __initLoop(self):
         loop = asyncio.new_event_loop()

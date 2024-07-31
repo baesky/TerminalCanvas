@@ -146,6 +146,12 @@ class ColorPallette24bit(Enum):
         grayLv = BaeMathUtil.clamp(s,0,255)
         return BaeVec3d(grayLv,grayLv,grayLv)
 
+class BaeFontStyle(Enum):
+    normal = 0
+    bold = 1
+    italic = 3
+    underline = 4
+
 class BaeColorMode:
 
     @staticmethod
@@ -467,7 +473,10 @@ class BaeTermDrawPipeline:
             inst['encode'](encode)
 
     def submitRT(self, encodedData):
-        self._rtQueue.put(encodedData)
+        try:
+            self._rtQueue.put_nowait(encodedData)
+        except queue.Full:
+            pass
 
     def getBackBuffer(self):
         idx = self._frameCounter % self._buffCount
@@ -633,8 +642,17 @@ class BaeTermDrawPipeline:
         return BaeVec2d(BaeMathUtil.round(BaeMathUtil.clamp(pt.X, 0, self.backbufferWidth)), BaeMathUtil.round(BaeMathUtil.clamp(pt.Y, 0, self.backbufferHeight)))
 
     def drawText(self, x:int,y:int, txt:str)->None:
+        # user responed for format like 'new line'
         BaeshadeUtil.resetCursorPos(y,x)
         print(txt)
+
+    def drawStyleText(self, x:int, y:int, txt:str, fontColor, bgColor, style:BaeFontStyle = 0, bNeedRestStyle:bool = False):
+        # user responed for format like 'new line'
+        encode = BaeTermDraw.encodeTextStyle(fontColor, bgColor, style)
+        buildStr = f'{encode}{txt}{BaeTermDraw.encodeResetToken() if bNeedRestStyle else ""}'
+        BaeshadeUtil.resetCursorPos(y,x)
+        self.__flush(buildStr)
+
 
     def drawPixel(self,x:int,y:int,color:BaeVec3d)->None:
         self._buff.fillAt(x,y,color)
@@ -698,6 +716,24 @@ class BaeTermDraw:
         g = max(0, min(255,rgb.Y))
         b = max(0, min(255,rgb.Z))
         return BaeVec3d(BaeMathUtil.round(r),BaeMathUtil.round(g),BaeMathUtil.round(b))
+
+    @staticmethod
+    def encodeResetToken():
+        return '\x1b[0m'
+
+    @staticmethod
+    def encodeTextStyle(fontColor, bgColor, style:BaeFontStyle = 0)->str:
+        encode4bit = lambda f,b : f'\x1b[{f}m\x1b[{b}m'
+        encode8bit = lambda f,b: f'\x1b[48;5;{b}m\x1b[38;5;{f}m'
+        encode24bit = lambda f,b : f'\x1b[48;2;{b.X};{b.Y};{b.Z}m\x1b[38;2;{f.X};{f.Y};{f.Z}m'
+
+        styleEncode = f'\x1b[{style}m' if style !=0 else '' 
+        if isinstance(fontColor, ColorPallette4bit):
+            return styleEncode + encode4bit(fontColor.value, bgColor.value)
+        elif isinstance(fontColor, ColorPallette8bit):
+            return styleEncode + encode8bit(fontColor.value, bgColor.value)
+        else:
+            return styleEncode + encode24bit(fontColor, bgColor)
 
     @staticmethod
     def encodePixel(topColr,botColr,mode):

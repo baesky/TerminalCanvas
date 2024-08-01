@@ -3,7 +3,6 @@ import math
 import baeshade as bs
 import math
 
-
 butil = bs.BaeMathUtil
 colrMode = bs.BaeColorMode
 Ray = bs.BaeRay
@@ -47,48 +46,37 @@ def distance(v1, v2):
     return np.linalg.norm(v1 - v2)
 
 def wavedx(position, direction, frequency, timeshift):
-    # 计算x的值
+
     x = np.dot(direction, position) * frequency + timeshift
-    # 计算wave的值
     wave = np.exp(np.sin(x) - 1.0)
-    # 计算dx的值
     dx = wave * np.cos(x)
-    # 返回wave和-dx的数组
     return np.array([wave, -dx])
 
 
 def getwaves(position, iterations, iTime):
-    wavePhaseShift = np.linalg.norm(position) * 0.1  # 相位偏移
-    iter_val = 0.0  # 用于生成随机方向
-    frequency = 1.0  # 初始频率
-    timeMultiplier = 2.0  # 初始时间乘子
-    weight = 1.0  # 初始权重
-    sumOfValues = 0.0  # 最终值的累加
-    sumOfWeights = 0.0  # 权重的累加
+    wavePhaseShift = np.linalg.norm(position) * 0.1
+    iter_val = 0.0 
+    frequency = 1.0  
+    timeMultiplier = 2.0  
+    weight = 1.0 
+    sumOfValues = 0.0 
+    sumOfWeights = 0.0 
 
     for i in range(iterations):
-        # 生成看似随机的波方向
         p = np.array([np.sin(iter_val), np.cos(iter_val)])
-
-        # 计算波的数据
         res = wavedx(position, p, frequency, iTime * timeMultiplier + wavePhaseShift)
 
-        # 根据波的拖动和波的导数移动位置
         position += p * res[1] * weight * DRAG_MULT
 
-        # 将结果累加
         sumOfValues += res[0] * weight
         sumOfWeights += weight
 
-        # 修改下一次迭代的参数
         weight = np.interp(0.2, [0, 1], [weight, 0.0])
         frequency *= 1.18
         timeMultiplier *= 1.07
 
-        # 增加一些随机性
         iter_val += 1232.399963
 
-    # 返回最终计算的结果
     return sumOfValues / sumOfWeights
 
 def raymarchwater(camera, start, end, depth, iTime):
@@ -162,17 +150,14 @@ def extra_cheap_atmosphere(raydir, sundir):
     
     return bluesky2 * (1.0 + 1.0 * np.power(1.0 - raydir[1], 3.0))
 
-# 计算太阳方向
 def getSunDirection():
     return normalize(np.array([1.2, 1.0, 0.2]))
 
-# 获取大气颜色
 def getAtmosphere(dir):
     sundir = getSunDirection()
     return extra_cheap_atmosphere(dir, sundir) * 0.5
 
 def aces_tonemap(color):
-    # 定义矩阵m1和m2
     m1 = np.array([
         [0.59719, 0.07600, 0.02840],
         [0.35458, 0.90834, 0.13383],
@@ -185,18 +170,14 @@ def aces_tonemap(color):
         [-0.07367, -0.00605, 1.07602]
     ])
     
-    # 矩阵m1乘以color向量
+
     v = np.dot(m1, color)
-    
-    # 计算a和b
     a = v * (v + 0.0245786) - 0.000090537
     b = v * (0.983729 * v + 0.4329510) + 0.238081
-    
-    # 计算tonemapped颜色
+
     result = np.dot(m2, a / b)
     result = np.clip(result, 0.0, 1.0)
-    
-    # Gamma校正
+
     return np.power(result, 1.0 / 2.2)
 
 def pixelShaderEX(x,y, b):
@@ -239,6 +220,7 @@ def pixelShaderEX(x,y, b):
 
     return vec3(fragColor[0]*255,fragColor[1]*255,fragColor[2]*255)
 
+#reference:https://www.shadertoy.com/view/mtyGWy
 def palette( t )->vec3:
     a = vec3(0.5, 0.5, 0.5);
     b = vec3(0.5, 0.5, 0.5);

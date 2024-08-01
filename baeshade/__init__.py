@@ -11,3 +11,4 @@ from .baeshadeutil import BaeshadeUtil
 from .baeshadeapp import BaeKeyboard
 from .baeshadeapp import BaeApp
 from .baeshade import ColorPallette4bit, ColorPallette8bit, ColorPallette24bit,BaeFontStyle
+from .baeshade import BaeRenderingTask

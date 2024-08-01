@@ -446,6 +446,16 @@ class BaeFrameCounter:
     def frame(self):
         return self._counter
 
+class BaeRenderingTask:
+    def __init__(self, work):
+        """
+        prior: 0:before primitive draw, 1:after primitive draw
+        """
+        self._work = work
+
+
+    def Tick(self, DPI:'BaeTermDrawPipeline'):
+        self._work(DPI)
 
 class BaeTermDrawPipeline:
     def __init__(self, 
@@ -572,8 +582,10 @@ class BaeTermDrawPipeline:
     def PrimitivesNum(self):
         return len(self._primList)
 
+    def BatchDrawPrimitives(self, delta:float):
+        return self.__drawPrimitive(delta)
 
-    def _drawPrimitive(self, delta:float):
+    def __drawPrimitive(self, delta:float):
         #_buff as Backgournd, not need update
         renderTarget = self._buff
         rtH = renderTarget.virtualSize.Y
@@ -629,7 +641,7 @@ class BaeTermDrawPipeline:
         if self._shader is not None:
             self.getBackBuffer().compute(self._shader)
 
-    async def present(self, delta=0.0):
+    async def present(self, delta=0.0, tasklist:Optional[list[BaeRenderingTask]]=None):
         """
         output backbuffer to terminal
         """
@@ -639,8 +651,12 @@ class BaeTermDrawPipeline:
         # bind current working backbuffer
         self.bindRenderTaret(self.getBackBuffer())
 
+
+        for work in tasklist:
+            work.Tick(delta, self)
+
         # draw primitives
-        self._drawPrimitive(delta)
+        self.__drawPrimitive(delta)
         self.workerPayload.update('_perfDrawScene', perfWatch.stop())
         
         # gather postprocess working

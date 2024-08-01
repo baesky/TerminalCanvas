@@ -1,4 +1,4 @@
-from .baeshade import BaeTermDrawPipeline, ColorPallette4bit
+from .baeshade import BaeTermDrawPipeline, ColorPallette4bit, BaeRenderingTask
 from .baeshadeutil import BaeshadeUtil
 import time
 from typing import Optional, Callable
@@ -28,7 +28,6 @@ class BaePerfData:
         self.expectFPS = 0 # expected FPS
         self.frameTime = 0 # single frame delta time
 
-
 class BaeApp:
     def __init__(self,render:BaeTermDrawPipeline = None,tick:Callable[[float],None]=None):
         
@@ -47,9 +46,14 @@ class BaeApp:
         #handle ctrl+z
         signal.signal(signal.SIGTSTP, self.__HandleCtrlZ)
 
+        self._renderingTask = [BaeRenderingTask]
+
 
     async def __tick(self,delta:float):
         pass
+
+    def addTask(self, task:BaeRenderingTask):
+        self._renderingTask.append(task)
 
     def attachRender(self, render:BaeTermDrawPipeline):
         self._renderPipe = render
@@ -99,7 +103,7 @@ class BaeApp:
         self._perfData.logicTickTime = self._tickTimer.stop() * 1000
 
         self._tickTimer.reset()
-        await self._renderPipe.present(delta)
+        await self._renderPipe.present(delta, self._renderingTask)
         self._perfData.drawTime = self._tickTimer.stop() * 1000
 
         # draw perf stat

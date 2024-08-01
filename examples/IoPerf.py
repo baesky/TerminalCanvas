@@ -56,8 +56,7 @@ sys.stdout = buffered_stdout
 
 for x in range(testNum):
     perf2.reset()
-    pice = 700
-    interval = 8192#bufflen // pice
+    interval = 8192
     for i in range(0, bufflen, interval):
         sys.stdout.buffer.write(large_buff[i:i+interval].encode('UTF-8'))
         #sys.stdout.write(large_buff[i:i+interval])

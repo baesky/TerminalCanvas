@@ -71,8 +71,6 @@ class BaeApp:
         self._frameTimer = BaeshadeUtil.Stopwatch()
         self._tickTimer = BaeshadeUtil.Stopwatch()
 
-        #debug use
-        #self._tempPerf = BaeshadeUtil.Stopwatch()
 
     def __HandleCtrlZ(self,sig,frame):
         print('pressed ctrl+z')
@@ -90,10 +88,6 @@ class BaeApp:
 
         waitTimeSec = max(0.0,self._displayRate - delta)
         delayTime = waitTimeSec
-        # if delayTime > 0.005:
-        #     self._tickTimer.reset()
-        #     await asyncio.sleep(delayTime - 0.001)
-        #     delayTime -= self._tickTimer.stop()
         
         while delayTime > 0:
             self._tickTimer.reset()

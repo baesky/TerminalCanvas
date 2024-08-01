@@ -1,24 +1,11 @@
 import math
-        
+
 class BaeVec2d:
+    __slots__ = ['X', 'Y', '_eps']
     def __init__(self, x=0,y=0,eps=0.000001):
-        self._x = x
-        self._y = y
+        self.X = x
+        self.Y = y
         self._eps = eps
-
-    @property
-    def X(self):
-        return self._x
-
-    @property
-    def Y(self):
-        return self._y
-    
-    def SetX(self,v):
-        self._x = v
-
-    def SetY(self,v):
-        self._y = v
 
     def __add__(self, o):
         return BaeVec2d(self.X + o.X, self.Y + o.Y)
@@ -67,13 +54,10 @@ class BaeVec2d:
         return lh.X * rh.X + lh.Y * rh.Y
 
 class BaeVec3d(BaeVec2d):
+    __slots__ = ['Z']  
     def __init__(self, x=0,y=0,z=0,esp=0.000001):
         super().__init__(x,y,esp)
-        self._z = z
-
-    @property
-    def Z(self):
-        return self._z
+        self.Z = z
 
     @property
     def Length(self):

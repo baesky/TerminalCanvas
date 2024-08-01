@@ -62,7 +62,7 @@ def sdfScene(ray,start,end,steps=100):
 def initRay(x,y,buffsize,eye):
     uv = vec2(x,y) / buffsize
     uv -= 0.5
-    uv.SetY(uv.Y * -1.0)
+    uv.Y = (uv.Y * -1.0)
 
     dir = vec3(uv.X,uv.Y,1).Normalize()
     return Ray(eye,dir)
@@ -93,14 +93,17 @@ def pixelShader(x,y,b):
 
     return output
 
+def draw_scene(delta:float,DPI:bs.BaeTermDrawPipeline):
+    DPI.runShader(pixelShader)
+
 if __name__ == '__main__':
     # set a RT desc
     RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
 
     # config pipeline
     drawPipe = bs.BaeTermDrawPipeline(RT)
-    drawPipe.setShader(pixelShader)
 
     # config app
-    app = bs.BaeApp(drawPipe)
+    app = bs.BaeApp(renderer=drawPipe)
+    app.addTask(draw_scene)
     app.run()

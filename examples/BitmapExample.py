@@ -11,6 +11,11 @@ bgcolor = vec3(64.0,64.0,64.0)
 colrMode = bs.BaeColorMode
 sprite = bs.BaeSprite
 
+class MyDrawSceneTask(bs.BaeRenderingTask):
+
+    def onDraw(self, delta:float):
+        self.getDPI().BatchDrawPrimitives(delta)
+
 if __name__ == '__main__':
 
     #read a pic
@@ -43,8 +48,8 @@ if __name__ == '__main__':
     # add prim to draw
     drawPipe.addPrimtive(goblin)
 
-    myApp = bapp(render=drawPipe)
-
+    myApp = bapp(renderer=drawPipe)
+    myApp.addTask(MyDrawSceneTask())
     myApp.run()
 
 

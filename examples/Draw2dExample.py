@@ -2,33 +2,41 @@
 
 import baeshade as bs
 
+bapp = bs.BaeApp
 colrMode = bs.BaeColorMode
 util = bs.BaeshadeUtil
 vec2 = bs.BaeVec2d
 vec3 = bs.BaeVec3d
 sprite = bs.BaeSprite
 bgcolor = vec3(128,128,128)
-# set a buffer
-RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
-# config pipeline
-drawPipe = bs.BaeTermDrawPipeline(RT)
 
-#clear canvas
-drawPipe.clearScene(bgcolor)
+class MyDrawSceneTask(bs.BaeRenderingTask):
 
-#draw body
-drawPipe.drawSolidCircle2D(vec2(20,14), 10, vec3(170,150,64))
-drawPipe.drawSolidCircle2D(vec2(20,14), 9, vec3(255,255,0))
-#draw eyes
-drawPipe.drawLine2D(vec2(16,10),vec2(16,12), vec3(255,255,255))
-drawPipe.drawLine2D(vec2(17,10),vec2(17,12), vec3(0,0,0))
-drawPipe.drawLine2D(vec2(23,10),vec2(23,12), vec3(255,255,255))
-drawPipe.drawLine2D(vec2(24,10),vec2(24,12), vec3(0,0,0))
-#draw mouth
-drawPipe.drawLine2D(vec2(20,13),vec2(23,13), vec3(200,80,32))
-drawPipe.drawLine2D(vec2(20,14),vec2(22,14), vec3(200,80,32))
-# run one frame
-drawPipe.encodeRT()
+    def onDraw(self, delta:float):
+        self.getDPI().clearScene(bgcolor)
 
-print(util.getTermSize())
-util.resetAttribute()
+        #draw body
+        self.getDPI().drawSolidCircle2D(vec2(20,14), 10, vec3(170,150,64))
+        self.getDPI().drawSolidCircle2D(vec2(20,14), 9, vec3(255,255,0))
+        #draw eyes
+        self.getDPI().drawLine2D(vec2(16,10),vec2(16,12), vec3(255,255,255))
+        self.getDPI().drawLine2D(vec2(17,10),vec2(17,12), vec3(0,0,0))
+        self.getDPI().drawLine2D(vec2(23,10),vec2(23,12), vec3(255,255,255))
+        self.getDPI().drawLine2D(vec2(24,10),vec2(24,12), vec3(0,0,0))
+        #draw mouth
+        self.getDPI().drawLine2D(vec2(20,13),vec2(23,13), vec3(200,80,32))
+        self.getDPI().drawLine2D(vec2(20,14),vec2(22,14), vec3(200,80,32))
+
+if __name__ == '__main__':
+
+    # set a buffer
+    RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
+    # config pipeline
+    drawPipe = bs.BaeTermDrawPipeline(RT)
+
+    myApp = bapp(renderer=drawPipe)
+    myApp.addTask(MyDrawSceneTask())
+    myApp.run()
+    
+    print(util.getTermSize())
+    util.resetAttribute()

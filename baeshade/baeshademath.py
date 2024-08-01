@@ -65,9 +65,9 @@ class BaeVec3d(BaeVec2d):
     
     def Normalize(self):
         len = self.Length
-        self._x = self._x / len
-        self._y = self._y / len
-        self._z = self._z / len
+        self.X = self.X / len
+        self.Y = self.Y / len
+        self.Z = self.Z / len
         return self
 
     def __add__(self,o):
@@ -171,14 +171,14 @@ class BaeBoundingBox2D:
     def addPoint(self,x,y):
         
         if x < self._min.X:
-            self._min.SetX(x)
+            self._min.X = x
         elif x > self._max.X:
-            self._max.SetX(x)
+            self._max.X = x
 
         if y < self._min.Y:
-            self._min.SetY(y)
+            self._min.Y = y
         elif y > self._max.Y:
-            self._max.SetY(y)
+            self._max.X = y
 
     @property
     def area(self):

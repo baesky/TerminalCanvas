@@ -3,11 +3,10 @@ import datetime
 import asyncio
 import multiprocessing
 import queue
-from .baeshademath import BaeVec2d
-from .baeshademath import BaeVec3d
-from .baeshademath import BaeMathUtil
+
+from .baeshademath import BaeVec3d,BaeVec2d,BaeMathUtil,BaeBoundingBox2D
 from .baeshadeutil import BaeshadeUtil
-from .baeshademath import BaeBoundingBox2D
+
 from typing import Optional, Callable
 from enum import Enum
 from operator import itemgetter
@@ -358,8 +357,8 @@ class BaeSprite():
         return self._pos
 
     def setPos(self,x:int,y:int)->None:
-        self._pos.SetX(x)
-        self._pos.SetY(y)
+        self._pos.X = x
+        self._pos.Y = y
 
     def rawFillPixel(self,x:int,y:int,color:BaeVec3d,seq:int=0)->None:
         self._buff[seq].fillAt(x, y, color)
@@ -431,7 +430,7 @@ def BaeEncodingTask(payload):
         perfData = payload['perfData'].get()
         BaeTermDrawPipeline.drawStyleText(1, 1, f'fps:{perfData.expectFPS}/{1000 // perfData.frameTime}, Frame:{perfData.frameTime:.2f}, Logic:{perfData.logicTickTime:.2f},'
                                           f' Draw:{perfData.drawTime:.2f}, Encoding:{payload["_perfSubmitRT"]*1000:.2f}, bandwidth:{perfStrFlush:,}'
-                                          f' cu:{payload["_perfPostProcess"]*1000:.2f}\n'
+                                          f' \n'
                                           ,ColorPallette4bit.blue,ColorPallette4bit.black_bg)
         
 class BaeFrameCounter:
@@ -447,50 +446,53 @@ class BaeFrameCounter:
         return self._counter
 
 class BaeRenderingTask:
-    def __init__(self, work):
-        """
-        prior: 0:before primitive draw, 1:after primitive draw
-        """
-        self._work = work
 
+    def setDPI(self, DPI:'BaeTermDrawPipeline'):
+        self.__DPI = DPI
 
-    def Tick(self, DPI:'BaeTermDrawPipeline'):
-        self._work(DPI)
+    def getDPI(self):
+        return self.__DPI
+
+    def __call__(self, delta:float):
+        if self.__DPI is not None:
+            self.onDraw(delta)
+        else:
+            raise Exception("DPI not set")
+
+    def onInit(self):
+        pass
+
+    def onDraw(self, delta:float):
+        pass
 
 class BaeTermDrawPipeline:
     def __init__(self, 
                  bufDesc,
-                 bufNum:int = 3, # triple buffer
-                 bStrict = False # true means every single frame must be drawn
                  ):
         """
         bufDesc: {'width','height','colorMode'}
         """
         self._buff = None
-        self._buffCount = bufNum
-        self._strictMode = bStrict
-        self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc['colorMode'])] * bufNum
+        self._buffCount = bufDesc.get('bufferCount',3)
+        self._strictMode = bufDesc.get('bStrict',False)
+        self._backbuffer = [BaeBuffer(bufDesc['width'],bufDesc['height'],bufDesc.get('colorMode', BaeColorMode.Color24Bits))] * self._buffCount
 
         self._frameCounter = BaeFrameCounter()
 
         self._screenMode = False
         self._primList = [BaeSprite]
 
-        self._rtQueue = BaeWorkQueue(bufNum)
-        self._perfData = BaeWorkQueue(bufNum)
+        self._rtQueue = BaeWorkQueue(self._buffCount)
+        self._perfData = BaeWorkQueue(self._buffCount)
         payload = {
             'rtQueue': self._rtQueue.getQueue(),
             'bExclusive': self.isExclusiveMode,
             'perfData': self._perfData.getQueue(),
-            '_perfSubmitRT': 0,
-            '_perfDrawScene': 0
+            '_perfRenderingTask': 0,
         }
         self.workerPayload = BaeWorkerPayload(payload)
         self.encodeWorker = BaeEncodeWorker(BaeEncodingTask, (self.workerPayload.getPayload(),))
         self.encodeWorker.run()
-
-        #hack for shader compute
-        self._shader = None
 
         #bind a default rt
         self.bindRenderTaret(self._backbuffer[0], True)
@@ -503,8 +505,8 @@ class BaeTermDrawPipeline:
         if self.encodeWorker is not None:
             self.encodeWorker.stop()
 
-    def setShader(self, shader):
-        self._shader = shader
+    def runShader(self, shader:Callable[[int,int,dict],BaeVec3d]):
+        self.getBackBuffer().compute(shader)
 
     @property
     def isExclusiveMode(self):
@@ -637,32 +639,23 @@ class BaeTermDrawPipeline:
                         for x in range(lenth):
                             self.drawPixel(xpos+x, idx*2, bmp)
 
-    def __postprocess(self):
-        if self._shader is not None:
-            self.getBackBuffer().compute(self._shader)
-
     async def present(self, delta=0.0, tasklist:Optional[list[BaeRenderingTask]]=None):
         """
         output backbuffer to terminal
         """
         self._frameCounter.Increment()
 
-        perfWatch = BaeshadeUtil.Stopwatch()
+        
         # bind current working backbuffer
         self.bindRenderTaret(self.getBackBuffer())
 
 
+        # do rendering work
+        perfWatch = BaeshadeUtil.Stopwatch()
         for work in tasklist:
-            work.Tick(delta, self)
+            work(delta)
 
-        # draw primitives
-        self.__drawPrimitive(delta)
-        self.workerPayload.update('_perfDrawScene', perfWatch.stop())
-        
-        # gather postprocess working
-        perfWatch.reset()
-        self.__postprocess()
-        self.workerPayload.update('_perfPostProcess', perfWatch.stop())
+        self.workerPayload.update('_perfRenderingTask', perfWatch.stop())
 
         perfWatch.reset()
         # encode buffers and submit draw

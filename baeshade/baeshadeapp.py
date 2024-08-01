@@ -1,4 +1,5 @@
 from .baeshade import BaeTermDrawPipeline, ColorPallette4bit, BaeRenderingTask
+from .baeshademath import BaeVec3d
 from .baeshadeutil import BaeshadeUtil
 import time
 from typing import Optional, Callable
@@ -29,48 +30,50 @@ class BaePerfData:
         self.frameTime = 0 # single frame delta time
 
 class BaeApp:
-    def __init__(self,render:BaeTermDrawPipeline = None,tick:Callable[[float],None]=None):
+    def __init__(self,renderDesc:dict,tick_func:Callable[[float],None]=None):
         
         self._FixedFps = 24
         self._displayRate = 1.0/self._FixedFps
         self._bExit = False
-        self._tick = self.__tick if tick is None else tick
+        self._tick = self.__tick if tick_func is None else tick_func
         self._frameTimer = None
         self._tickTimer = None
         
         self._perfData = BaePerfData()
         self._perfData.expectFPS = self._FixedFps
 
-        self.attachRender(render)
+        self.attachRender(BaeTermDrawPipeline(renderDesc))
 
         #handle ctrl+z
         signal.signal(signal.SIGTSTP, self.__HandleCtrlZ)
 
-        self._renderingTask = [BaeRenderingTask]
+        self._renderingTask = []
 
 
     async def __tick(self,delta:float):
         pass
 
     def addTask(self, task:BaeRenderingTask):
+        task.setDPI(self.__renderPipe)
+        task.onInit()
         self._renderingTask.append(task)
 
     def attachRender(self, render:BaeTermDrawPipeline):
-        self._renderPipe = render
+        self.__renderPipe = render
 
     def requestExit(self):
          self._bExit = True
 
     def __exitApp(self):
         # back to previous terminal mode
-        self._renderPipe.useExclusiveScreen(False)
+        self.__renderPipe.useExclusiveScreen(False)
         BaeshadeUtil.restoreScreen()
-        self._renderPipe.shutDown()
+        self.__renderPipe.shutDown()
 
     def __prepareRunApp(self):
 
         # enter exclusive mode
-        self._renderPipe.useExclusiveScreen(True)
+        self.__renderPipe.useExclusiveScreen(True)
 
         self._frameTimer = BaeshadeUtil.Stopwatch()
         self._tickTimer = BaeshadeUtil.Stopwatch()
@@ -103,11 +106,11 @@ class BaeApp:
         self._perfData.logicTickTime = self._tickTimer.stop() * 1000
 
         self._tickTimer.reset()
-        await self._renderPipe.present(delta, self._renderingTask)
+        await self.__renderPipe.present(delta, self._renderingTask)
         self._perfData.drawTime = self._tickTimer.stop() * 1000
 
         # draw perf stat
-        self._renderPipe.submitPerfData(self._perfData)
+        self.__renderPipe.submitPerfData(self._perfData)
 
 
     async def __LoopWrapper(self):

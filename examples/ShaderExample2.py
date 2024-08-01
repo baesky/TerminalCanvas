@@ -256,7 +256,8 @@ def pixelShader(x,y, b):
         
     return finalColor*255
 
-
+def draw_scene(delta:float, DPI:bs.BaeTermDrawPipeline):
+    DPI.runShader(pixelShader)
 
 if __name__ == '__main__':
     # set a RT desc
@@ -264,8 +265,8 @@ if __name__ == '__main__':
     #RT = {'width':142,'height':68,'colorMode':colrMode.Color24Bits}
     # config pipeline
     drawPipe = bs.BaeTermDrawPipeline(RT)
-    drawPipe.setShader(pixelShader)
 
     # config app
     app = bs.BaeApp(drawPipe)
+    app.addTask(draw_scene)
     app.run()

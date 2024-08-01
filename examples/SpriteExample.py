@@ -8,7 +8,6 @@ import math
 
 bapp = bs.BaeApp
 bkey = bs.BaeKeyboard
-
 vec3 = bs.BaeVec3d
 vec2 = bs.BaeVec2d
 
@@ -47,14 +46,23 @@ def extractResourceTile(path,w,h)->sprite:
     
     return actor
 
-def gameTick(delta:float):
-    global acc
-    acc = acc + delta
+async def gameTick(delta:float):
+    acc = time.time()
     v = (math.sin(acc)+1.0)*0.5
     v *= 0.5
     goblin.setPos(100*v,0)
     goblin2.setPos(80*v, 3)
-    
+
+class MyDrawSceneTask(bs.BaeRenderingTask):
+
+    def onInit(self):
+        self.getDPI().addPrimtive(ground)
+        self.getDPI().addPrimtive(goblin)
+        self.getDPI().addPrimtive(goblin2)
+
+    def onDraw(self, delta:float):
+        self.getDPI().BatchDrawPrimitives(delta)
+
 if __name__ == '__main__':
 
     #read a pic
@@ -68,13 +76,8 @@ if __name__ == '__main__':
     # Create a RT to draw
     RTDesc = {'width':192,'height':64,'colorMode':colrMode.Color24Bits}
 
-    # config pipeline
-    drawPipe = bs.BaeTermDrawPipeline(RTDesc)
-    drawPipe.addPrimtive(ground)
-    drawPipe.addPrimtive(goblin)
-    drawPipe.addPrimtive(goblin2)
-    acc = 0
+    myApp = bapp(RTDesc,tick_func=gameTick)
 
-    myApp = bapp(render=drawPipe,tick=gameTick)
+    myApp.addTask(MyDrawSceneTask())
 
     myApp.run()

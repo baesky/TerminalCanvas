@@ -30,7 +30,10 @@ class BaeVec2d:
             return BaeVec2d(self.X + o.X, self.Y + o.Y)
 
     def __sub__(self,o):
-        return BaeVec2d(self.X - o.X, self.Y - o.Y)
+        if isinstance(o, BaeVec2d):
+            return BaeVec2d(self.X - o.X, self.Y - o.Y)
+        else:
+            return BaeVec2d(self.X - o, self.Y - o)
 
     def __isub__(self,o):
         if isinstance(o, float):
@@ -44,6 +47,8 @@ class BaeVec2d:
     def __truediv__(self, f):
         if isinstance(f, float):
             return BaeVec2d(self.X / f, self.Y /f)
+        elif isinstance(f, int):
+            return BaeVec2d(self.X / f, self.Y /f)
         else:
             return BaeVec2d(self.X / f.X, self.Y /f.Y)
 
@@ -52,6 +57,10 @@ class BaeVec2d:
     
     def __ne__(self, o):
         return not(self == o)
+    
+    @property
+    def Length(self):
+        return math.sqrt(self.X*self.X+self.Y*self.Y)
 
     @staticmethod
     def Dot(lh , rh):
@@ -78,7 +87,10 @@ class BaeVec3d(BaeVec2d):
         return self
 
     def __add__(self,o):
-        return BaeVec3d(self.X + o.X, self.Y + o.Y, self.Z + o.Z)
+        if isinstance(o, BaeVec3d):
+            return BaeVec3d(self.X + o.X, self.Y + o.Y, self.Z + o.Z)
+        else:
+            return BaeVec3d(self.X + o, self.Y + o, self.Z + o)
 
     def __iadd__(self,o):
         if isinstance(o, float):
@@ -87,7 +99,10 @@ class BaeVec3d(BaeVec2d):
             return BaeVec3d(self.X + o.X, self.Y + o.Y, self.Z + o.Z)
 
     def __sub__(self,o):
-        return BaeVec3d(self.X - o.X, self.Y - o.Y, self.Z - o.Z)
+        if isinstance(o, BaeVec3d):
+            return BaeVec3d(self.X - o.X, self.Y - o.Y, self.Z - o.Z)
+        else:
+            return BaeVec3d(self.X - o, self.Y - o, self.Z - o)
     
     def __isub__(self,o):
         if isinstance(o, float):
@@ -96,13 +111,21 @@ class BaeVec3d(BaeVec2d):
             return BaeVec3d(self.X - o.X, self.Y - o.Y, self.Z - o.Z)
 
     def __mul__(self, f):
-        if isinstance(f, float):
-            return BaeVec3d(self.X * f, self.Y * f, self.Z * f )
-        else:
+        if isinstance(f, BaeVec3d):
             return BaeVec3d(self.X * f.X, self.Y * f.Y, self.Z * f.Z )
+        else:
+            return BaeVec3d(self.X * f, self.Y * f, self.Z * f )
+        
+    def __rmul__(self, f):
+        return self.__mul__(f)
     
     def __truediv__(self, f):
-        return BaeVec3d(self.X / f, self.Y /f, self.Z / f)
+        if isinstance(f, float):
+            return BaeVec3d(self.X / f, self.Y /f, self.Z / f)
+        elif isinstance(f, int):
+            return BaeVec3d(self.X / f, self.Y /f, self.Z / f)
+        else:
+            return BaeVec3d(self.X / f.X, self.Y /f.Y, self.Z / f.Z)
 
     def __eq__(self, o):
         return abs(self.X - o.X) < self._eps and \
@@ -147,6 +170,14 @@ class BaeMathUtil:
     @staticmethod
     def lerp(a,b,t):
         return a + (b - a) * t
+    
+    def cos(v):
+        if isinstance(v, BaeVec3d):
+            return BaeVec3d(math.cos(v.X), math.cos(v.Y), math.cos(v.Z))
+        elif isinstance(v, BaeVec2d):
+            return BaeVec2d(math.cos(v.X), math.cos(v.Y))
+        else:
+            return math.cos(v)
 
 class BaeBoundingBox2D:
     def __init__(self):

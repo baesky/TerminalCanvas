@@ -69,8 +69,9 @@ def initRay(x,y,buffsize,eye):
 
 def pixelShader(x,y,b):
 
+    res = vec2(b['bw'],b['bh'])
     eye = vec3(0,1,0)
-    d,n,p,c = sdfScene(initRay(x,y,b,eye), 0.1, 100)
+    d,n,p,c = sdfScene(initRay(x,y,res,eye), 0.1, 100)
 
     if n.IsNearZero == True:
         return bgcolor

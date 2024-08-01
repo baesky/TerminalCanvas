@@ -12,7 +12,7 @@ from typing import Optional, Callable
 from enum import Enum
 from operator import itemgetter
 from itertools import groupby
-
+import time
 
 BAECODEX = BaeshadeUtil.EncodeTable
 
@@ -312,7 +312,7 @@ class BaeBuffer:
 
         return self._effectiveRows
 
-    def compute(self,kernel:Optional[Callable[[int,int, BaeVec2d],BaeVec3d]]):
+    def compute(self,kernel:Optional[Callable[[int,int, dict],BaeVec3d]]):
         """
         Run per pixel
         """
@@ -324,7 +324,9 @@ class BaeBuffer:
 
         for row in range(bh):
             for col in range(bw):
-                self.fillAt(col,row, kernel(col,row, BaeVec2d(bw,bh)))
+                extra = {'time':time.time(),'bw':bw,'bh':bh}
+
+                self.fillAt(col,row, kernel(col,row, extra))
 
 class BaeSprite():
     def __init__(self,w:int,h:int,

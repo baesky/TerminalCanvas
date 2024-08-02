@@ -7,6 +7,7 @@ import signal
 import asyncio
 from multiprocessing import Process
 import sys
+import platform
 
 class BaeKeyboard:
     def  __init__(self, keypress=None, keyrelease=None):
@@ -44,8 +45,9 @@ class BaeApp:
 
         self.attachRender(BaeTermDrawPipeline(renderDesc))
 
-        #handle ctrl+z
-        signal.signal(signal.SIGTSTP, self.__HandleCtrlZ)
+        if platform.system() != 'Windows':
+            #handle ctrl+z
+            signal.signal(signal.SIGTSTP, self.__HandleCtrlZ)
 
         self._renderingTask = []
 

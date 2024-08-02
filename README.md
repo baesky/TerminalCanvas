@@ -18,16 +18,13 @@ Draw something on your terminal
 
 examples/Draw2dExample.py
 
-
 ![draw2dexample](resource/Draw2dExample.png)
 
 examples/BitmapExample.py
 
-
 ![bitmapexample](resource/BitmapExample.png)
 
 examples/SpriteExample.py
-
 
 ![spriteexample](resource/SpriteExample.gif)
 
@@ -42,24 +39,19 @@ A simple wrapper for run a terminal canvas instance.
 An utility class you need to inherit, it has a DPI(Draw Pipeline Interface) for providing various drawing methods:
 
 **def drawStyleText(x:int, y:int, txt:str, fontColor=ColorPallette4bit.white, bgColor= ColorPallette4bit.black_bg, style:BaeFontStyle = 0, bNeedRestStyle:bool = False)**
-
-    used for drawing text on canvas
+  used for drawing text on canvas
 
 **def drawLine2D(self, start:BaeVec2d, end:BaeVec2d, color:BaeVec3d)**
-
-    used for drawing line on canvas
+  used for drawing line on canvas
 
 **def drawSolidCircle2D(self, center:BaeVec2d, r:float, color:BaeVec3d)**
-
-    used for drawing circle on canvas
+  used for drawing circle on canvas
 
 **def drawPixel(self,x:int,y:int,color:BaeVec3d)**
-
-    the most basic method, you can use is to draw various patterns
+  the most basic method, you can use is to draw various patterns
 
 **def runShader(self, shader:Callable[[int,int,dict],BaeVec3d])**
-
-    Another version of drawPixel is conceptually equivalent to a shader (or kernel) running on a GPU. Note: It still runs on the CPU in the Python interpreter.
+  Another version of drawPixel is conceptually equivalent to a shader (or kernel) running on a GPU. Note: It still runs on the CPU in the Python interpreter.
 
 ## Citation
 

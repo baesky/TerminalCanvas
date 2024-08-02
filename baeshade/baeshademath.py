@@ -1,5 +1,9 @@
 import math
 
+"""
+simple math utilities, performance is not guaranteed.
+"""
+
 class BaeVec2d:
     __slots__ = ['X', 'Y', '_eps']
     def __init__(self, x=0,y=0,eps=0.000001):

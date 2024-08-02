@@ -15,6 +15,9 @@ import time
 
 BAECODEX = BaeshadeUtil.EncodeTable
 
+"""
+core function for drawing
+"""
 # ref to https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 
 class ColorPallette4bit(Enum):
@@ -418,7 +421,6 @@ class BaeWorkQueue():
     def getQueue(self):
         return self._queue
 
-    
 def BaeEncodingTask(payload):
     while True:
         encode = payload['rtQueue'].get()
@@ -747,8 +749,6 @@ class BaeTermDrawPipeline:
             ptX += incX
             ptY += incY
             
-
-
 class BaeTermDraw:
 
     @staticmethod

@@ -5,6 +5,9 @@ import sys
 import shutil
 
 class BaeshadeUtil:
+    """
+    utils for basic term control and misc functions
+    """
     class EncodeTable(str,Enum):
         Empty = ''
         NewLine = '\n'

@@ -1,16 +1,14 @@
 """Example How to draw on terminal"""
 
-import baeshade as bs
+from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask, BaeshadeUtil
 
-bapp = bs.BaeApp
-colrMode = bs.BaeColorMode
-util = bs.BaeshadeUtil
-vec2 = bs.BaeVec2d
-vec3 = bs.BaeVec3d
-sprite = bs.BaeSprite
+
+vec2 = BaeVec2d
+vec3 = BaeVec3d
+sprite = BaeSprite
 bgcolor = vec3(128,128,128)
 
-class MyDrawSceneTask(bs.BaeRenderingTask):
+class MyDrawSceneTask(BaeRenderingTask):
 
     def onDraw(self, delta:float):
         dpi = self.DPI
@@ -30,13 +28,11 @@ class MyDrawSceneTask(bs.BaeRenderingTask):
 if __name__ == '__main__':
 
     # set a buffer
-    RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
-    # config pipeline
-    drawPipe = bs.BaeTermDrawPipeline(RT)
+    RT = {'width':42,'height':28,'colorMode':BaeColorMode.Color24Bits}
 
-    myApp = bapp(renderer=drawPipe)
+    myApp = BaeApp(RT)
     myApp.addTask(MyDrawSceneTask())
     myApp.run()
     
-    print(util.getTermSize())
-    util.resetAttribute()
+    print(BaeshadeUtil.getTermSize())
+    BaeshadeUtil.resetAttribute()

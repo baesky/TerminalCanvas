@@ -1,18 +1,18 @@
 """ Example how to draw a bitmap """
 
 import baeshade as bs
+from baeshade import BaeApp, BaeVec3d, BaeVec2d, BaeColorMode, BaeSprite
 from PIL import Image
 import os
 
-bapp = bs.BaeApp
-vec3 = bs.BaeVec3d
-vec2 = bs.BaeVec2d
+vec3 = BaeVec3d
+vec2 = BaeVec2d
 bgcolor = vec3(64.0,64.0,64.0)
-colrMode = bs.BaeColorMode
-sprite = bs.BaeSprite
 
 class MyDrawSceneTask(bs.BaeRenderingTask):
 
+    def onInit(self):
+        self.DPI.addPrimtive(goblin)
     def onDraw(self, delta:float):
         self.DPI.BatchDrawPrimitives(delta)
 
@@ -29,12 +29,10 @@ if __name__ == '__main__':
 
     bmp = s.convert('RGB')
 
-    goblin = sprite(64,64,1,0,colrMode.Color24Bits)
+    goblin = BaeSprite(64,64,1,0,BaeColorMode.Color24Bits)
 
     # Create a RT to draw
-    RT = {'width':64,'height':64,'colorMode':colrMode.Color24Bits}
-    # config pipeline
-    drawPipe = bs.BaeTermDrawPipeline(RT)
+    RT = {'width':64,'height':64,'colorMode':BaeColorMode.Color24Bits}
 
     #draw pixels
     for y in range(bmp.height):
@@ -45,10 +43,7 @@ if __name__ == '__main__':
             #    continue
             goblin.rawFillPixel(x,y,vec3(r,g,b))
 
-    # add prim to draw
-    drawPipe.addPrimtive(goblin)
-
-    myApp = bapp(renderer=drawPipe)
+    myApp = BaeApp(RT)
     myApp.addTask(MyDrawSceneTask())
     myApp.run()
 

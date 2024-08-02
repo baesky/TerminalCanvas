@@ -1,12 +1,11 @@
 """Example How to draw use a shader"""
 
-import baeshade as bs
+from baeshade import BaeApp, BaeColorMode, BaeRenderingTask, BaeRay, BaeVec3d, BaeVec2d
 import math
 
-colrMode = bs.BaeColorMode
-Ray = bs.BaeRay
-vec3 = bs.BaeVec3d
-vec2 = bs.BaeVec2d
+Ray = BaeRay
+vec3 = BaeVec3d
+vec2 = BaeVec2d
 bgcolor = vec3(0,0,0)
 
 def spSdf(v):
@@ -94,16 +93,16 @@ def pixelShader(x,y,b):
     return output
 
 
-class ShaderExampleTask(bs.BaeRenderingTask):
+class ShaderExampleTask(BaeRenderingTask):
     def onDraw(self, delta: float):
         self.DPI.runShader(pixelShader)
 
 
 if __name__ == '__main__':
     # set a RT desc
-    RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
+    RT = {'width':42,'height':28,'colorMode':BaeColorMode.Color24Bits}
 
     # config app
-    app = bs.BaeApp(RT)
+    app = BaeApp(RT)
     app.addTask(ShaderExampleTask())
     app.run()

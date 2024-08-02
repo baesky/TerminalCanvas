@@ -1,13 +1,11 @@
 import numpy as np
 import math
-import baeshade as bs
-import math
+from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask, BaeMathUtil,BaeRay
 
-butil = bs.BaeMathUtil
-colrMode = bs.BaeColorMode
-Ray = bs.BaeRay
-vec3 = bs.BaeVec3d
-vec2 = bs.BaeVec2d
+
+Ray = BaeRay
+vec3 = BaeVec3d
+vec2 = BaeVec2d
 # reference: https://www.shadertoy.com/view/MdXyzX
 
 # Constants from the shader
@@ -229,7 +227,7 @@ def palette( t )->vec3:
 
     tmp1 = c*t+d
     tmp =  6.28318*(tmp1)
-    return a + b*butil.cos(tmp );
+    return a + b*BaeMathUtil.cos(tmp );
 
 def pixelShader(x,y, b):
     frageCoord = vec2(x,y)
@@ -256,15 +254,15 @@ def pixelShader(x,y, b):
         
     return finalColor*255
 
-class ShaderExampleTask(bs.BaeRenderingTask):
+class ShaderExampleTask(BaeRenderingTask):
     def onDraw(self, delta: float):
         self.DPI.runShader(pixelShader)
 
 if __name__ == '__main__':
     # set a RT desc
-    RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
+    RT = {'width':42,'height':28,'colorMode':BaeColorMode.Color24Bits}
 
     # config app
-    app = bs.BaeApp(RT)
+    app = BaeApp(RT)
     app.addTask(ShaderExampleTask())
     app.run()

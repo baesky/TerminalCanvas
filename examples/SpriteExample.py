@@ -1,27 +1,22 @@
 """ Example how to draw a bitmap """
 
-import baeshade as bs
+from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask, BaeshadeUtil
 from PIL import Image
 import os
 import time
 import math
 
-bapp = bs.BaeApp
-bkey = bs.BaeKeyboard
-vec3 = bs.BaeVec3d
-vec2 = bs.BaeVec2d
+vec3 = BaeVec3d
+vec2 = BaeVec2d
 
-util = bs.BaeshadeUtil
-sprite = bs.BaeSprite
-colrMode = bs.BaeColorMode
 
 LimitFPS = 10
 DisplayRate = 1.0 / LimitFPS
 
-def extractResource(path,w,h,seqNum,fps,colorMode)->sprite:
+def extractResource(path,w,h,seqNum,fps,colorMode)->BaeSprite:
     pic = Image.open(path)
     bmp = pic.convert('RGB')
-    actor = sprite(w,h,seqNum,fps,colorMode)
+    actor = BaeSprite(w,h,seqNum,fps,colorMode)
     for frame in range(seqNum):
         ptX = frame * 192
         ptY = 0
@@ -41,7 +36,7 @@ async def gameTick(delta:float):
     goblin.setPos(100*v,0)
     goblin2.setPos(80*v, 3)
 
-class MyDrawSceneTask(bs.BaeRenderingTask):
+class MyDrawSceneTask(BaeRenderingTask):
 
     def onInit(self):
         drawer = self.DPI
@@ -58,14 +53,14 @@ if __name__ == '__main__':
     actor_path = os.path.join(os.getcwd(),"resource/sprite.png")
     bg_path = os.path.join(os.getcwd(),"resource/Tilemap_Flat.png")
 
-    goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
-    goblin2 = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
-    ground = extractResource(bg_path,192,64,1,0,colrMode.Color24Bits)
+    goblin = extractResource(actor_path, 64,64,7,10, BaeColorMode.Color24Bits)
+    goblin2 = extractResource(actor_path, 64,64,7,10, BaeColorMode.Color24Bits)
+    ground = extractResource(bg_path,192,64,1,0,BaeColorMode.Color24Bits)
 
     # Create a RT to draw
-    RTDesc = {'width':192,'height':64,'colorMode':colrMode.Color24Bits}
+    RTDesc = {'width':192,'height':64,'colorMode':BaeColorMode.Color24Bits}
 
-    myApp = bapp(RTDesc,tick_func=gameTick)
+    myApp = BaeApp(RTDesc,tick_func=gameTick)
 
     myApp.addTask(MyDrawSceneTask())
 

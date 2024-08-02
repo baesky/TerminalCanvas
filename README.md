@@ -17,12 +17,18 @@ Draw something on your terminal
 ## Learn from examples
 
 examples/Draw2dExample.py
+
+
 ![draw2dexample](resource/Draw2dExample.png)
 
 examples/BitmapExample.py
+
+
 ![bitmapexample](resource/BitmapExample.png)
 
 examples/SpriteExample.py
+
+
 ![spriteexample](resource/SpriteExample.gif)
 
 ## Basic usage:

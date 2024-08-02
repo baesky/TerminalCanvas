@@ -1,0 +1,6 @@
+﻿baeshade/__pycache__
+baeshade.egg-info
+resource/.DS_Store
+.vscode
+resource
+dist

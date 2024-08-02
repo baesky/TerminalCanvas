@@ -1,1 +1,2 @@
 Draw something in your terminal
+more detail please check project repo: https://github.com/baesky/TerminalCanvas

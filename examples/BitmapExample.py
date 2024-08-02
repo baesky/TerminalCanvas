@@ -1,7 +1,6 @@
 """ Example how to draw a bitmap """
 
-import baeshade as bs
-from baeshade import BaeApp, BaeVec3d, BaeVec2d, BaeColorMode, BaeSprite
+from baeshade import BaeApp, BaeVec3d, BaeVec2d, BaeColorMode, BaeSprite, BaeRenderingTask
 from PIL import Image
 import os
 
@@ -9,7 +8,7 @@ vec3 = BaeVec3d
 vec2 = BaeVec2d
 bgcolor = vec3(64.0,64.0,64.0)
 
-class MyDrawSceneTask(bs.BaeRenderingTask):
+class MyDrawSceneTask(BaeRenderingTask):
 
     def onInit(self):
         self.DPI.addPrimtive(goblin)

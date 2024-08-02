@@ -1,4 +1,3 @@
-from .baeshade import BaeBuffer
 from .baeshade import BaeColorMode
 from .baeshade import BaeSprite
 from .baeshade import ColorPallette4bit, ColorPallette8bit, ColorPallette24bit,BaeFontStyle

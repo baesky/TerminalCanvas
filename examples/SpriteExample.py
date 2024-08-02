@@ -58,7 +58,7 @@ if __name__ == '__main__':
     ground = extractResource(bg_path,192,64,1,0,BaeColorMode.Color24Bits)
 
     # Create a RT to draw
-    RTDesc = {'width':192,'height':64,'colorMode':BaeColorMode.Color24Bits}
+    RTDesc = {'width':192,'height':64,'colorMode':BaeColorMode.Color24Bits, 'bStrict':True}
 
     myApp = BaeApp(RTDesc,tick_func=gameTick)
 

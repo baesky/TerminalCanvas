@@ -27,23 +27,11 @@ def extractResource(path,w,h,seqNum,fps,colorMode)->sprite:
         ptY = 0
         p = bmp.crop((ptX, ptY, ptX + 192, ptY + 192)).resize((64,64))
 
-        for row in range(p.height):
-            for col in range(p.width):
-                r,g,b = p.getpixel((col,row))
+        for row in range(h):
+            for col in range(w):
+                r,g,b = p.getpixel((col%p.width,row%p.height))
                 actor.rawFillPixel(col,row,vec3(r,g,b),frame)
 
-    return actor
-
-def extractResourceTile(path,w,h)->sprite:
-    pic = Image.open(path)
-    bmp = pic.convert('RGB')
-    actor = sprite(w,h,1,0,colrMode.Color24Bits)
-    p = bmp.crop((0, 0,  192, 192)).resize((64,64))
-    for row in range(h):
-        for col in range(w):
-            r,g,b = p.getpixel((col%p.width,row%p.height))
-            actor.rawFillPixel(col,row,vec3(r,g,b),0)
-    
     return actor
 
 async def gameTick(delta:float):
@@ -71,7 +59,7 @@ if __name__ == '__main__':
 
     goblin = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
     goblin2 = extractResource(actor_path, 64,64,7,10, colrMode.Color24Bits)
-    ground = extractResourceTile(bg_path,192,64)
+    ground = extractResource(bg_path,192,64,1,0,colrMode.Color24Bits)
 
     # Create a RT to draw
     RTDesc = {'width':192,'height':64,'colorMode':colrMode.Color24Bits}

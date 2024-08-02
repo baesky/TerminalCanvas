@@ -428,12 +428,13 @@ def BaeEncodingTask(payload):
             BaeshadeUtil.resetCursorPos()
         BaeTermDrawPipeline.draw(encode)
 
-        perfStrFlush = len(encode)
         perfData = payload['perfData'].get()
-        BaeTermDrawPipeline.drawStyleText(1, 1, f'fps:{perfData.expectFPS}/{1000 // perfData.frameTime}, Frame:{perfData.frameTime:.2f}, Logic:{perfData.logicTickTime:.2f},'
-                                          f' Draw:{perfData.drawTime:.2f}, Encoding:{payload["_perfSubmitRT"]*1000:.2f}, bandwidth:{perfStrFlush:,}'
-                                          f' \n'
-                                          ,ColorPallette4bit.blue,ColorPallette4bit.black_bg)
+        if perfData.bShowPerf:
+            perfStrFlush = len(encode)
+            BaeTermDrawPipeline.drawStyleText(1, 1, f'fps:{perfData.expectFPS}/{1000 // perfData.frameTime}, Frame:{perfData.frameTime:.2f}, Logic:{perfData.logicTickTime:.2f},'
+                                            f' Draw:{perfData.drawTime:.2f}, Encoding:{payload["_perfSubmitRT"]*1000:.2f}, bandwidth:{perfStrFlush:,}'
+                                            f' \n'
+                                            ,ColorPallette4bit.blue,ColorPallette4bit.black_bg)
         
 class BaeFrameCounter:
     def __init__(self):
@@ -558,10 +559,11 @@ class BaeTermDrawPipeline:
     
     def submitPerfData(self, perfData):
         try:
-            if self._strictMode: 
-                self._perfData.getQueue().put(perfData)
-            else:
-                self._perfData.getQueue().put_nowait(perfData)
+            if perfData.bShowPerf is True:
+                if self._strictMode: 
+                    self._perfData.getQueue().put(perfData)
+                else:
+                    self._perfData.getQueue().put_nowait(perfData)
         except (queue.Full, queue.Empty):
             pass
 

@@ -29,9 +29,10 @@ class BaePerfData:
         self.drawTime = 0 #scene drawing time, include encoding RT Time
         self.expectFPS = 0 # expected FPS
         self.frameTime = 0 # single frame delta time
+        self.bShowPerf = False
 
 class BaeApp:
-    def __init__(self,renderDesc:dict,tick_func:Callable[[float],None]=None):
+    def __init__(self,renderDesc:dict,tick_func:Callable[[float],None]=None,bShowPerf=False):
         
         self._FixedFps = 24
         self._displayRate = 1.0/self._FixedFps
@@ -42,6 +43,7 @@ class BaeApp:
         
         self._perfData = BaePerfData()
         self._perfData.expectFPS = self._FixedFps
+        self._perfData.bShowPerf = bShowPerf
 
         self.attachRender(BaeTermDrawPipeline(renderDesc))
 

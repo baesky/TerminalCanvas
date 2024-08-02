@@ -93,17 +93,17 @@ def pixelShader(x,y,b):
 
     return output
 
-def draw_scene(delta:float,DPI:bs.BaeTermDrawPipeline):
-    DPI.runShader(pixelShader)
+
+class ShaderExampleTask(bs.BaeRenderingTask):
+    def onDraw(self, delta: float):
+        self.DPI.runShader(pixelShader)
+
 
 if __name__ == '__main__':
     # set a RT desc
     RT = {'width':42,'height':28,'colorMode':colrMode.Color24Bits}
 
-    # config pipeline
-    drawPipe = bs.BaeTermDrawPipeline(RT)
-
     # config app
-    app = bs.BaeApp(renderer=drawPipe)
-    app.addTask(draw_scene)
+    app = bs.BaeApp(RT)
+    app.addTask(ShaderExampleTask())
     app.run()

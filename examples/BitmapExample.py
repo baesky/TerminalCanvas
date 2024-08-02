@@ -14,7 +14,7 @@ sprite = bs.BaeSprite
 class MyDrawSceneTask(bs.BaeRenderingTask):
 
     def onDraw(self, delta:float):
-        self.getDPI().BatchDrawPrimitives(delta)
+        self.DPI.BatchDrawPrimitives(delta)
 
 if __name__ == '__main__':
 

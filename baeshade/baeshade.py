@@ -450,7 +450,8 @@ class BaeRenderingTask:
     def setDPI(self, DPI:'BaeTermDrawPipeline'):
         self.__DPI = DPI
 
-    def getDPI(self):
+    @property
+    def DPI(self):
         return self.__DPI
 
     def __call__(self, delta:float):

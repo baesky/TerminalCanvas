@@ -44,12 +44,13 @@ async def gameTick(delta:float):
 class MyDrawSceneTask(bs.BaeRenderingTask):
 
     def onInit(self):
-        self.getDPI().addPrimtive(ground)
-        self.getDPI().addPrimtive(goblin)
-        self.getDPI().addPrimtive(goblin2)
+        drawer = self.DPI
+        drawer.addPrimtive(ground)
+        drawer.addPrimtive(goblin)
+        drawer.addPrimtive(goblin2)
 
     def onDraw(self, delta:float):
-        self.getDPI().BatchDrawPrimitives(delta)
+        self.DPI.BatchDrawPrimitives(delta)
 
 if __name__ == '__main__':
 

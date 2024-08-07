@@ -841,11 +841,20 @@ class BaeTermDrawUtils:
 
     @staticmethod
     def clearBefore():
+        """
+        clear content from current cursor to the beginning of the line
+        """
         BaeshadeUtil.clearLine(1)
 
     def clearAfter():
+        """
+        clear content from current cursor to the end of the line
+        """
         BaeshadeUtil.clearLine(0)
 
     def clearLine():
+        """
+        clear the entire line where the cursor is currently on
+        """
         BaeshadeUtil.clearLine(2)
     

@@ -821,4 +821,31 @@ class BaeTermDraw:
                 encodeBuff.append(subPixels + nl)
 
         return ''.join(encodeBuff)
+
+
+class BaeTermDrawUtils:
+    """
+    Direct draw on terminal
+    """
+
+    @staticmethod
+    def drawText(posX:int, posY:int, txt:str, color: ColorPallette4bit | ColorPallette8bit | ColorPallette24bit,
+                 bg_color: ColorPallette4bit | ColorPallette8bit | ColorPallette24bit, style:BaeFontStyle = 0):
+        """
+        draw text with style
+        """
+        encode = BaeTermDraw.encodeTextStyle(color, bg_color, style)
+        buildStr = f'{encode}{txt}{BaeTermDraw.encodeResetToken()}'
+        BaeshadeUtil.resetCursorPos(posY,posX)
+        BaeTermDrawPipeline.draw(buildStr)
+
+    @staticmethod
+    def clearBefore():
+        BaeshadeUtil.clearLine(1)
+
+    def clearAfter():
+        BaeshadeUtil.clearLine(0)
+
+    def clearLine():
+        BaeshadeUtil.clearLine(2)
     

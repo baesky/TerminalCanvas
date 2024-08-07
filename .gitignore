@@ -4,3 +4,4 @@ resource/.DS_Store
 .vscode
 resource
 dist
+examples/IoPerf.py

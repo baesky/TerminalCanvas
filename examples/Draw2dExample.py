@@ -1,6 +1,6 @@
 """Example How to draw on terminal"""
 
-from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask, BaeshadeUtil
+from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask
 
 
 vec2 = BaeVec2d
@@ -34,5 +34,3 @@ if __name__ == '__main__':
     myApp.addTask(MyDrawSceneTask())
     myApp.run()
     
-    print(BaeshadeUtil.getTermSize())
-    BaeshadeUtil.resetAttribute()

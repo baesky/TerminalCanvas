@@ -1,6 +1,6 @@
 """ Example how to draw a bitmap """
 
-from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask, BaeshadeUtil
+from baeshade import BaeApp, BaeColorMode, BaeVec2d, BaeVec3d, BaeSprite, BaeRenderingTask
 from PIL import Image
 import os
 import time

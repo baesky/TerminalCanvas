@@ -15,6 +15,7 @@ class BaeshadeUtil:
         HideCursor = '\x1b[?25l'
         ShowCursor = '\x1b[?25h'
         Erase = '\x1b[%dJ'
+        LineErase = '\x1b[%dK'
         EnterAltBuffer = '\x1b[?1049h'
         LeaveAltBuffer = '\x1b[?1049l'
         Reset = '\x1b[0m'
@@ -55,6 +56,9 @@ class BaeshadeUtil:
     def clearScreen():
         #print(BaeshadeUtil.EncodeTable.Erase % (2), end="")
         BaeshadeUtil.output(BaeshadeUtil.EncodeTable.Erase % (2))
+
+    def clearLine(mode:int = 0):
+        BaeshadeUtil.output(BaeshadeUtil.EncodeTable.LineErase % (mode))
 
     @staticmethod
     def resetAttribute():

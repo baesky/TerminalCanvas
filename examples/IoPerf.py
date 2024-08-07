@@ -2,8 +2,6 @@ import sys
 import baeshade as bs
 import os
 
-util = bs.BaeshadeUtil
-
 #buff = '\x1b[48;5;10m\x1b[0m'
 
 """
@@ -39,6 +37,7 @@ sys.stdout.flush()
 print('os.write: %f ms' % (t3))
 """
 
+"""
 bufflen = 261851
 large_buff = ['a'] * bufflen
 large_buff = ''.join(large_buff)
@@ -70,3 +69,4 @@ print(f'io buffersize: {io.DEFAULT_BUFFER_SIZE}')
 print(f'total: {testNum}')
 #print(f'time: {calcTimes}')
 [print(f'{x}: {calcTimes[x]:.2f}') for x in range(testNum)]
+"""

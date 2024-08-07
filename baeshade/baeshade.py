@@ -830,14 +830,15 @@ class BaeTermDrawUtils:
 
     @staticmethod
     def drawText(posX:int, posY:int, txt:str, color: ColorPallette4bit | ColorPallette8bit | ColorPallette24bit,
-                 bg_color: ColorPallette4bit | ColorPallette8bit | ColorPallette24bit, style:BaeFontStyle = 0):
+                 bg_color: ColorPallette4bit | ColorPallette8bit | ColorPallette24bit = ColorPallette4bit.black_bg, style:BaeFontStyle = 0):
         """
         draw text with style
         """
         encode = BaeTermDraw.encodeTextStyle(color, bg_color, style)
         buildStr = f'{encode}{txt}{BaeTermDraw.encodeResetToken()}'
         BaeshadeUtil.resetCursorPos(posY,posX)
-        BaeTermDrawPipeline.draw(buildStr)
+        BaeshadeUtil.output(buildStr)
+        BaeshadeUtil.flush()
 
     @staticmethod
     def clearBefore():
